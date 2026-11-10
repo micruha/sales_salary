@@ -398,28 +398,39 @@
         if (activeEmployees.length <= 1) return alert("На смене должен оставаться хотя бы один сотрудник!");
         if (confirm("Убрать сотрудника со смены?")) { activeEmployees = activeEmployees.filter(e => e.id !== id); renderLiveEmployees(); calculateTotals(); await runCloud("updateEmployees", { employees: activeEmployees }); }
     };
-    // СИНХРОННАЯ ФУНКЦИЯ ДОБАВЛЕНИЯ ЧЕКА С ОЖИДАНИЕМ ОТВЕТА
+    // СИНХРОННАЯ ФУНКЦИЯ ДОБАВЛЕНИЯ ЧЕКА С ИСПРАВЛЕННЫМ ОЖИДАНИЕМ
     async function addOperation(type) {
         let title = opTitle.value.trim(), cash = Number(opCash.value) || 0, card = Number(opCard.value) || 0;
         if (!title || (cash <= 0 && card <= 0)) return alert("Введите наименование и сумму!");
         
-        let opData = { id: "op_" + Date.now(), time: new Date().toLocaleTimeString("ru-RU", {hour: "2-digit", minute: "2-digit"}), title, cash, card, bonus: Number(opBonusPct.value), type };
+        let opData = { 
+            id: "op_" + Date.now() + Math.random().toString(36).substr(2,4), 
+            time: new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }), 
+            title, 
+            cash, 
+            card, 
+            bonus: Number(opBonusPct.value), 
+            type 
+        };
         
-        // Блокируем интерфейс на время отправки
+        // Блокируем поля на время отправки чека в сеть
         opTitle.disabled = opCash.disabled = opCard.disabled = true;
-        history.push(opData); renderOperations(); calculateTotals(); 
         
-        // Ожидаем подтверждения от Google Таблицы
-        let success = await runCloud("addOperation", opData);
+        history.push(opData); 
+        renderOperations(); 
+        calculateTotals();
+        
+        // Отправляем данные в Google и просто ждём завершения запроса
+        await runCloud("addOperation", opData);
+        
+        // Разблокируем поля кассы для новой продажи
         opTitle.disabled = opCash.disabled = opCard.disabled = false;
         
-        if (!success) {
-            alert("❌ Ошибка сети! Чек не сохранился в Google Таблице.");
-            history.pop(); renderOperations(); calculateTotals();
-            return;
-        }
-        opTitle.value = ""; opCash.value = "0"; opCard.value = "0";
+        opTitle.value = ""; 
+        opCash.value = "0"; 
+        opCard.value = "0";
     }
+
 
 
     btnDoSale.addEventListener("click", () => addOperation("sale")); btnDoReturn.addEventListener("click", () => addOperation("return"));
