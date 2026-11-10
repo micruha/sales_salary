@@ -79,7 +79,8 @@
 <body>
 
 <!-- ОКНО ВЫБОРА ТОЧКИ (С ИНДИКАТОРОМ ОБЛАКА И ИНСТРУКЦИЕЙ) -->
-<div class="gate-box" id="gate-point-select">
+<div class="gate-box" id="gate-point-select" style="display: localStorage.getItem('kassa_saved_point') ? 'none' : 'flex';">
+
     <div class="sync-headline">
         <h2 style="border:none; padding:0;">Выбор торговой точки</h2>
         <span class="cloud-dot cloud-offline" id="cloud-indicator"></span>
@@ -134,7 +135,8 @@
     <button class="btn-gray" id="btn-back-to-points">← Назад к выбору торговой точки</button>
 </div>
 <!-- ОСНОВНОЙ РАБОЧИЙ ДВУХКОЛОНОЧНЫЙ ТЕРМИНАЛ -->
-<div class="workspace" id="main-terminal">
+<div class="workspace" id="main-terminal" style="display: localStorage.getItem('kassa_saved_point') ? 'grid' : 'none';">
+
     <!-- ЛЕВАЯ КОЛОНКА: ВВОД ОПЕРАЦИЙ, ПЕРСОНАЛ, ИТОГИ -->
     <div class="column">
         <h2>
