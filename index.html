@@ -578,13 +578,21 @@
         }
 
         // ШАГ 2: В фоновом режиме спокойно тестируем связь для индикатора методом POST
-        try { 
+        try {
+            // Если точка еще не выбрана (первый запуск), не отправляем запрос, а сразу зажигаем зеленый
+            if (!currentPoint) {
+                setCloudStatus(true, "Облако готово. Выберите торговую точку.");
+                return;
+            }
+            
             let res = await fetch(CONFIG_CLOUD_URL, { 
                 method: "POST", 
                 headers: { "Content-Type": "text/plain" }, 
                 body: JSON.stringify({ action: "alive", point: currentPoint }) 
             }); 
             if(res.ok) setCloudStatus(true); else setCloudStatus(true, "Облако готово к работе."); 
+        }
+
         } catch(e) { 
             setCloudStatus(true, "Облако готово. Терминал ожидает действий."); 
         }
