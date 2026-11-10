@@ -290,7 +290,7 @@
 
     function checkShiftTimeBlock() {
         let hours = new Date().getHours();
-        if (hours < 4 || hours >= 19) { alert("Ошибка доступа! Смену можно открыть только с 07:00 до 19:00."); return false; }
+        if (hours < 7 || hours >= 19) { alert("Ошибка доступа! Смену можно открыть только с 07:00 до 19:00."); return false; }
         return true;
     }
 
