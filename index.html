@@ -363,20 +363,28 @@ function renderOpenEmpPool() {
             ? "<input type=\"text\" class=\"edit-name-input\" value=\"" + emp.name + "\" onclick=\"event.stopPropagation()\" onchange=\"updateTempName('" + emp.id + "', this.value)\">" 
             : "<span class=\"emp-name-text\">" + emp.name + "</span>";
         
-                // По умолчанию блок пустой
+        // По умолчанию блок пустой
         let toggleHTML = ""; 
+        
+        // Включаем общее флекс-центрирование по горизонтали для КАЖДОЙ плитки
+        card.style.display = "flex";
+        card.style.flexDirection = "column";
+        card.style.alignItems = "center";     // Ровняем всё строго по центру (влево-вправо)
+        card.style.textAlign = "center";       // Текст внутри тоже по центру
+        
         // Если сотрудника нет в списке запрета, добавляем ему галочку
         if (!noBaseOnly.includes(emp.name)) {
             toggleHTML = "<div class=\"mode-toggle\" onclick=\"event.stopPropagation()\"><label><input type=\"checkbox\" class=\"mode-chk\"> Только ставка</label></div>";
+            
+            // Если галочка есть, прижимаем контент к верху, чтобы оставалось место под чекбокс
+            card.style.justifyContent = "flex-start"; 
         } else {
-            // ЕСЛИ ГАЛОЧКИ НЕТ: включаем центрирование текста по вертикали
-            card.style.display = "flex";
-            card.style.flexDirection = "column";
-            card.style.justifyContent = "center";
-            card.style.alignItems = "center";
-            card.style.textAlign = "center";
+            // Если галочки нет, центрируем имя ещё и по вертикали (сверху-вниз)
+            card.style.justifyContent = "center"; 
         }
+        
         card.innerHTML = "<div class=\"emp-name\">" + nameContent + "</div>" + toggleHTML;
+
         card.addEventListener("click", () => { card.classList.toggle("active"); }); 
         openEmpPool.appendChild(card);
     });
