@@ -568,34 +568,29 @@
             return; 
         }
 
-        // ШАГ 1: Проверяем память устройства до отправки запросов.
+        // ШАГ 1: Автоход при перезагрузке (F5)
         let savedPoint = localStorage.getItem("kassa_saved_point");
         if (savedPoint) {
             currentPoint = savedPoint;
-            selectedPoint.value = savedPoint; // Корректируем выпадающий список под нужный филиал
-            
-            // Вместо слепого клика по кнопке вызываем безопасную функцию загрузки данных
-            await enterToCurrentPoint(); 
-        } // <--- ЗДЕСЬ СТРОГО ЗАКРЫВАЕТСЯ ШАГ 1!
-
-        // ШАГ 2: Теперь этот блок стоит отдельно и сработает при любом запуске
-        try {
-            // Если точка еще не выбрана, плавно подставляем дефолтную для первого теста связи
-            let pointToPing = currentPoint || selectedPoint.value || "Техносити";
-            
-            let res = await fetch(CONFIG_CLOUD_URL, { 
-                method: "POST", 
-                headers: { "Content-Type": "text/plain" }, 
-                body: JSON.stringify({ action: "alive", point: pointToPing }) 
-            }); 
-            if(res.ok) setCloudStatus(true); else setCloudStatus(true, "Облако готово к работе."); 
-        } catch(e) { 
-            setCloudStatus(true, "Облако готово. Терминал ожидает действий."); 
+            selectedPoint.value = savedPoint; // Выставляем сохраненный филиал в списке
+            await enterToCurrentPoint(); // Запускаем полноценный вход
         }
-    } // <--- ЗДЕСЬ ЗАКРЫВАЕТСЯ САМА ФУНКЦИЯ checkInitialConnection
+
+        // ШАГ 2: Стандартная фоновая проверка связи (GET), которая зажжет зеленый свет
+        try { 
+            let res = await fetch(CONFIG_CLOUD_URL + "?point=" + (currentPoint || "Техносити"), { 
+                method: "GET", 
+                mode: "cors" 
+            }); 
+            if (res.ok) setCloudStatus(true); else setCloudStatus(false); 
+        } catch(e) { 
+            setCloudStatus(false); 
+        }
+    }
     
-    // Запускаем автоматику при старте страницы
+    // Запуск проверки при старте приложения
     checkInitialConnection();
 </script>
 </body>
 </html>
+
