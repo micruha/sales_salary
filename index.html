@@ -580,9 +580,8 @@
             let res = await fetch(CONFIG_CLOUD_URL, { 
                 method: "POST", 
                 headers: { "Content-Type": "text/plain" }, 
-                body: JSON.stringify({ action: "alive" }) 
+                body: JSON.stringify({ action: "alive", point: currentPoint }) 
             }); 
-            // ИСПРАВЛЕНО ЗДЕСЬ: Если res.ok — включаем зеленый. Если браузер упирается, ВСЁ РАВНО включаем зеленый, чтобы не блокировать кассу.
             if(res.ok) setCloudStatus(true); else setCloudStatus(true, "Облако готово к работе."); 
         } catch(e) { 
             setCloudStatus(true, "Облако готово. Терминал ожидает действий."); 
