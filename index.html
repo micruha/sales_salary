@@ -591,7 +591,6 @@
                 body: JSON.stringify({ action: "alive", point: currentPoint }) 
             }); 
             if(res.ok) setCloudStatus(true); else setCloudStatus(true, "Облако готово к работе."); 
-        }
 
         } catch(e) { 
             setCloudStatus(true, "Облако готово. Терминал ожидает действий."); 
