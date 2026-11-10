@@ -372,9 +372,18 @@ function renderOpenEmpPool() {
         if (!noBaseOnly.includes(emp.name)) {
             toggleHTML = "<div class=\"mode-toggle\" onclick=\"event.stopPropagation()\"><label><input type=\"checkbox\" class=\"mode-chk\"> Только ставка</label></div>";
         }
-        
+                // По умолчанию блок пустой
+        let toggleHTML = ""; 
+        // Если сотрудника нет в списке запрета, добавляем ему галочку
+        if (!noBaseOnly.includes(emp.name)) {
+            toggleHTML = "<div class=\"mode-toggle\" onclick=\"event.stopPropagation()\"><label><input type=\"checkbox\" class=\"mode-chk\"> Только ставка</label></div>";
+        } else {
+            // ЕСЛИ ГАЛОЧКИ НЕТ: включаем центрирование текста по вертикали
+            card.style.display = "flex";
+            card.style.flexDirection = "column";
+            card.style.justifyContent = "center";
+        }
         card.innerHTML = "<div class=\"emp-name\">" + nameContent + "</div>" + toggleHTML;
-        
         card.addEventListener("click", () => { card.classList.toggle("active"); }); 
         openEmpPool.appendChild(card);
     });
