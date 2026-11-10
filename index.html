@@ -229,6 +229,40 @@
 </div>
 <script>
 
+    (async function() {
+        const PASSWORD_HASH = "647b2bb403b818ef801a32c1b3bc5390ae98a7aa56cf1fbb64dff7691641397b";
+        
+        if (sessionStorage.getItem("admin_passed") !== "true") {
+            let passInput = prompt("Вход заблокирован. Введите секретный пароль администратора:");
+            if (!passInput) return fail();
+            const msgBuffer = new TextEncoder().encode(passInput);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const userHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            if (userHash === PASSWORD_HASH) {
+                sessionStorage.setItem("admin_passed", "true");
+                if (typeof loadSalariesData === "function") loadSalariesData();
+            } else {
+                fail();
+            }
+        }
+        function fail() {
+            alert("Доступ категорически запрещен!");
+            document.documentElement.innerHTML = "<html style='background:#141414;'><body style='font-family:sans-serif; color:#f44336; text-align:center; padding-top:100px;'><h1>🚫 Доступ ограничен</h1></body></html>";
+            throw new Error("Блокировка доступа.");
+        }
+    })();
+
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('keydown', e => {
+        if (e.key === 'F12' || 
+            (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'c' || e.key === 'C')) || 
+            (e.ctrlKey && (e.key === 'u' || e.key === 'U'))) {
+            e.preventDefault();
+            return false;
+        }
+    });    
+
     const CONFIG_CLOUD_URL = "https://script.google.com/macros/s/AKfycbyktok79zqXQXI3_3fNIoHPNtCG5u3gPaMGZGVWYOQHivdr5lMr3YZOvRa2_cxyL7SH/exec";
 
     const masterEmployeeList = [
