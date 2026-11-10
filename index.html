@@ -348,7 +348,11 @@
     // ОТДЕЛЬНАЯ ФУНКЦИЯ ДЛЯ ВХОДА И ЗАГРУЗКИ ДАННЫХ ИЗ GOOGLE
     async function enterToCurrentPoint() {
         let data = await runCloud("get");
-        if (!data) return alert("Ошибка связи с таблицей Google");
+        if (!data) {
+            setCloudStatus(false, "Ошибка ответа Google Таблицы. Проверьте настройки точки.");
+            return;
+        }
+
 
         gatePointSelect.style.display = "none";
 
