@@ -277,8 +277,6 @@
         { id: "emp9", name: "Александр Алтухов", isEditable: false },
         { id: "emp10", name: "Григорий Ливит", isEditable: false },
         { id: "emp10", name: "Никита Проскурин", isEditable: false },
-        { id: "emp11", name: "Алексей Проскурин", isEditable: false },
-        { id: "admin", name: "Администратор", isEditable: false },
         { id: "temp1", name: "Сотрудник 1", isEditable: true },
         { id: "temp2", name: "Сотрудник 2", isEditable: true },
         { id: "temp3", name: "Сотрудник 3", isEditable: true }
@@ -365,13 +363,6 @@ function renderOpenEmpPool() {
             ? "<input type=\"text\" class=\"edit-name-input\" value=\"" + emp.name + "\" onclick=\"event.stopPropagation()\" onchange=\"updateTempName('" + emp.id + "', this.value)\">" 
             : "<span class=\"emp-name-text\">" + emp.name + "</span>";
         
-        // По умолчанию блок пустой
-        let toggleHTML = ""; 
-        
-        // Если сотрудника нет в списке запрета, добавляем ему галочку
-        if (!noBaseOnly.includes(emp.name)) {
-            toggleHTML = "<div class=\"mode-toggle\" onclick=\"event.stopPropagation()\"><label><input type=\"checkbox\" class=\"mode-chk\"> Только ставка</label></div>";
-        }
                 // По умолчанию блок пустой
         let toggleHTML = ""; 
         // Если сотрудника нет в списке запрета, добавляем ему галочку
