@@ -373,6 +373,8 @@ function renderOpenEmpPool() {
             card.style.display = "flex";
             card.style.flexDirection = "column";
             card.style.justifyContent = "center";
+            card.style.alignItems = "center";
+            card.style.textAlign = "center";
         }
         card.innerHTML = "<div class=\"emp-name\">" + nameContent + "</div>" + toggleHTML;
         card.addEventListener("click", () => { card.classList.toggle("active"); }); 
