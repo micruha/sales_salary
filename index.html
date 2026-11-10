@@ -180,7 +180,7 @@
             <div class="info-line"><span>Наличные в кассе:</span><span id="total-cash" style="font-weight:bold; color:var(--success);">0 тг.</span></div>
             <div class="info-line"><span>Безналичные (карты):</span><span id="total-card" style="font-weight:bold; color:#3498db;">0 тг.</span></div>
             <div class="info-line"><span>Общая премия (% от продаж):</span><span id="total-bonus-pool" style="font-weight:bold; color:var(--warn);">0 тг.</span></div>
-            <div class="info-line" style="border-bottom:none;"><span>Премия на 1 участника %:</span><span id="bonus-per-head" style="font-weight:bold; color:#9b59b6;">0 тг.</span></div>
+            <div class="info-line" style="border-bottom:none;"><span>Премия каждому сотруднику:</span><span id="bonus-per-head" style="font-weight:bold; color:#9b59b6;">0 тг.</span></div>
         </div>
 
         <!-- Управление персоналом прямо на смене (ПЕРЕНЕСЕНО ВНИЗ) -->
@@ -350,15 +350,36 @@
         return { totalKassa: tKassa, totalCash: tCash, totalCard: tCard, totalBonus: tBonus, perHeadBonus: perHeadBonus };
     }
 
-    function renderOpenEmpPool() {
-        openEmpPool.innerHTML = "";
-        masterEmployeeList.forEach(emp => {
-            let card = document.createElement("div"); card.className = "emp-card"; card.dataset.id = emp.id;
-            let nameContent = emp.isEditable ? "<input type=\"text\" class=\"edit-name-input\" value=\"" + emp.name + "\" onclick=\"event.stopPropagation()\" onchange=\"updateTempName('" + emp.id + "', this.value)\">" : "<span class=\"emp-name-text\">" + emp.name + "</span>";
-            card.innerHTML = "<div class=\"emp-name\">" + nameContent + "</div><div class=\"mode-toggle\" onclick=\"event.stopPropagation()\"><label><input type=\"checkbox\" class=\"mode-chk\"> Только ставка</label></div>";
-            card.addEventListener("click", () => { card.classList.toggle("active"); }); openEmpPool.appendChild(card);
-        });
-    }
+function renderOpenEmpPool() {
+    openEmpPool.innerHTML = "";
+    
+    // Список сотрудников, у которых НЕЛЬЗЯ выбрать фиксированный оклад
+    let noBaseOnly = ["Михаил Кренник", "Марат Валитов"];
+    
+    masterEmployeeList.forEach(emp => {
+        let card = document.createElement("div"); 
+        card.className = "emp-card"; 
+        card.dataset.id = emp.id;
+        
+        let nameContent = emp.isEditable 
+            ? "<input type=\"text\" class=\"edit-name-input\" value=\"" + emp.name + "\" onclick=\"event.stopPropagation()\" onchange=\"updateTempName('" + emp.id + "', this.value)\">" 
+            : "<span class=\"emp-name-text\">" + emp.name + "</span>";
+        
+        // По умолчанию блок пустой
+        let toggleHTML = ""; 
+        
+        // Если сотрудника нет в списке запрета, добавляем ему галочку
+        if (!noBaseOnly.includes(emp.name)) {
+            toggleHTML = "<div class=\"mode-toggle\" onclick=\"event.stopPropagation()\"><label><input type=\"checkbox\" class=\"mode-chk\"> Только ставка</label></div>";
+        }
+        
+        card.innerHTML = "<div class=\"emp-name\">" + nameContent + "</div>" + toggleHTML;
+        
+        card.addEventListener("click", () => { card.classList.toggle("active"); }); 
+        openEmpPool.appendChild(card);
+    });
+}
+
     window.updateTempName = function(id, newVal) { let emp = masterEmployeeList.find(e => e.id === id); if (emp && newVal.trim()) emp.name = newVal.trim(); };
     function renderLiveEmployees() {
         liveEmpContainer.innerHTML = "";
