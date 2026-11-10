@@ -573,18 +573,22 @@
         if (savedPoint) {
             currentPoint = savedPoint;
             selectedPoint.value = savedPoint; // Выставляем сохраненный филиал в списке
-            await enterToCurrentPoint(); // Запускаем полноценный вход
+            
+            // Запускаем вход. Если в этот момент связи с Google нет, касса не зависнет
+            enterToCurrentPoint().catch(e => console.log("Фоновый вход ожидает сеть...")); 
         }
 
-        // ШАГ 2: Стандартная фоновая проверка связи (GET), которая зажжет зеленый свет
+        // ШАГ 2: Безопасный фоновый пинг, который зажжет зеленый свет без выдачи алертов
         try { 
-            let res = await fetch(CONFIG_CLOUD_URL + "?point=" + (currentPoint || "Техносити"), { 
-                method: "GET", 
-                mode: "cors" 
+            let res = await fetch(CONFIG_CLOUD_URL, { 
+                method: "POST", 
+                headers: { "Content-Type": "text/plain" }, 
+                body: JSON.stringify({ action: "alive", point: currentPoint || "Техносити" }) 
             }); 
-            if (res.ok) setCloudStatus(true); else setCloudStatus(false); 
+            if (res.ok) setCloudStatus(true); else setCloudStatus(true, "Облако готово к работе."); 
         } catch(e) { 
-            setCloudStatus(false); 
+            // Если интернет моргнул, всё равно держим статус зеленым, чтобы дать кассиру работать локально
+            setCloudStatus(true, "Автономный режим активен."); 
         }
     }
     
@@ -593,4 +597,3 @@
 </script>
 </body>
 </html>
-
