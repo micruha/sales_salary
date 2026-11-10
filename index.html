@@ -343,15 +343,38 @@
             item.innerHTML = "<div class=\"op-info\"><span style=\"font-weight:bold;\">" + op.title + "</span><span class=\"op-meta\">" + op.time + " | " + details + "</span>" + bonusText + "</div><div class=\"op-right\"><span>" + (op.type === "sale" ? "+" : "-") + ((op.cash || 0) + (op.card || 0)).toLocaleString() + " ₸</span><button class=\"btn-delete\" onclick=\"deleteOp('" + op.id + "', event)\">❌</button></div>"; operationsContainer.appendChild(item);
         });
     }
+    // ОТДЕЛЬНАЯ ФУНКЦИЯ ДЛЯ ВХОДА И ЗАГРУЗКИ ДАННЫХ ИЗ GOOGLE
+    async function enterToCurrentPoint() {
+        let data = await runCloud("get");
+        if (!data) return alert("Ошибка связи с таблицей Google");
+
+        gatePointSelect.style.display = "none";
+
+        if (data.isOpen) {
+            activeEmployees = data.info.employees || [];
+            history = data.operations || [];
+            baseSalaryGlobal = 6000;
+            terminalPointBadge.textContent = currentPoint;
+            mainTerminal.style.display = "grid";
+            gateShiftOpen.style.display = "none";
+            renderLiveEmployees();
+            renderOperations();
+            calculateTotals();
+        } else {
+            gatePointDisplay.textContent = "Торговая точка: " + currentPoint;
+            gateShiftOpen.style.display = "flex";
+            mainTerminal.style.display = "none";
+            renderOpenEmpPool();
+        }
+    }
+
+    // САМА КНОПКА ТЕПЕРЬ ПРОСТО КЛАДЕТ ТОЧКУ В ПАМЯТЬ И ВЫЗЫВАЕТ ЭТУ ФУНКЦИЮ
     btnCheckPoint.addEventListener("click", async () => {
         localStorage.setItem("kassa_saved_point", selectedPoint.value);
-        currentPoint = selectedPoint.value; let data = await runCloud("get"); if (!data) return alert("Ошибка связи с таблицей Google");
-        gatePointSelect.style.display = "none";
-        if (data.isOpen) {
-            activeEmployees = data.info.employees || []; history = data.operations || []; baseSalaryGlobal = 6000;
-            terminalPointBadge.textContent = currentPoint; mainTerminal.style.display = "grid"; renderLiveEmployees(); renderOperations(); calculateTotals();
-        } else { gatePointDisplay.textContent = "Торговая точка: " + currentPoint; gateShiftOpen.style.display = "flex"; renderOpenEmpPool(); }
+        currentPoint = selectedPoint.value;
+        await enterToCurrentPoint();
     });
+
     btnBackToPoints.addEventListener("click", () => { gateShiftOpen.style.display = "none"; gatePointSelect.style.display = "flex"; });
     btnOpenShiftConfirm.addEventListener("click", async () => {
         if (!checkShiftTimeBlock()) return;
