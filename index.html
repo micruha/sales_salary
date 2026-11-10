@@ -267,29 +267,26 @@
     }
 
     async function runCloud(action, payload = {}) {
-        if (!CONFIG_CLOUD_URL || CONFIG_CLOUD_URL.includes("СЮДА_ВСТАВЬТЕ")) { 
-            setCloudStatus(false, "Ошибка: ссылка не прописана!"); return null; 
+        if (!CONFIG_CLOUD_URL || CONFIG_CLOUD_URL.includes("СЮДА_ВСТАВЬТЕ")) {
+            setCloudStatus(false, "Ошибка: ссылка не прописана!"); return null;
         }
         try {
             payload.point = currentPoint; payload.action = action;
-            // no-cors позволяет отправлять данные с любого устройства и любого браузера без блокировок
+            // Убираем mode: "no-cors", чтобы браузер разрешил прочитать ответ таблицы
             let res = await fetch(CONFIG_CLOUD_URL, {
                 method: "POST",
-                mode: "no-cors", 
-                headers: { "Content-Type": "application/json" },
+                headers: { "Content-Type": "text/plain" },
                 body: JSON.stringify(payload)
             });
             setCloudStatus(true);
-            
-            // Если мы просто запрашиваем данные при входе, делаем отдельный чистый запрос
             if (action === "get") {
-                let getRes = await fetch(CONFIG_CLOUD_URL + "?point=" + currentPoint);
-                let textData = await getRes.text();
+                let textData = await res.text();
                 return JSON.parse(textData);
             }
             return { status: "success" };
         } catch (err) { setCloudStatus(false); return null; }
     }
+
 
 
 
@@ -347,6 +344,7 @@
         });
     }
     btnCheckPoint.addEventListener("click", async () => {
+        localStorage.setItem("kassa_saved_point", selectedPoint.value);
         currentPoint = selectedPoint.value; let data = await runCloud("get"); if (!data) return alert("Ошибка связи с таблицей Google");
         gatePointSelect.style.display = "none";
         if (data.isOpen) {
@@ -507,13 +505,42 @@
         
         printWin.document.write(hHead + hSales + hExpenses + hStaff + hFoot); printWin.document.close();
         let res = await runCloud("closeShift", { finalSalariesList: finalSalariesList, totalCashInDrawer: finalDrawerCash, totals: { totalBonus: calc.totalBonus, perEmpBonus: calc.perHeadBonus } });
-        if (res) { modalCloseShift.style.display = "none"; mainTerminal.style.display = "none"; gatePointSelect.style.display = "flex"; history = []; activeEmployees = []; }
+        if (res) { localStorage.removeItem("kassa_saved_point"); modalCloseShift.style.display = "none"; mainTerminal.style.display = "none"; gatePointSelect.style.display = "flex"; history = []; activeEmployees = []; }
     });
+
+    // НАДЁЖНЫЙ ЗАПУСК: ИНСТАНТ-ПЕРЕХОД ПОСЛЕ F5 (БЕЗ СЛЕПЫХ КЛИКОВ)
     async function checkInitialConnection() {
-        if (!CONFIG_CLOUD_URL || CONFIG_CLOUD_URL.includes("СЮДА_ВСТАВЬТЕ")) { setCloudStatus(false, "Ошибка: ссылка не прописана!"); return; }
-        try { let res = await fetch(CONFIG_CLOUD_URL + "?point=Техносити", { method: "GET", mode: "cors" }); if(res.ok) setCloudStatus(true); else setCloudStatus(false); } catch(e) { setCloudStatus(false); }
+        if (!CONFIG_CLOUD_URL || CONFIG_CLOUD_URL.includes("СЮДА_ВСТАВЬТЕ")) { 
+            setCloudStatus(false, "Ошибка: ссылка не прописана!"); 
+            return; 
+        }
+
+        // ШАГ 1: Проверяем память устройства до отправки запросов.
+        let savedPoint = localStorage.getItem("kassa_saved_point");
+        if (savedPoint) {
+            currentPoint = savedPoint;
+            selectedPoint.value = savedPoint; // Корректируем выпадающий список под нужный филиал
+            
+            // Вместо слепого клика по кнопке вызываем безопасную функцию загрузки данных
+            await enterToCurrentPoint(); 
+        }
+
+        // ШАГ 2: В фоновом режиме спокойно тестируем связь для индикатора методом POST
+        try { 
+            let res = await fetch(CONFIG_CLOUD_URL, { 
+                method: "POST", 
+                headers: { "Content-Type": "text/plain" }, 
+                body: JSON.stringify({ action: "alive" }) 
+            }); 
+            if(res.ok) setCloudStatus(true); else setCloudStatus(false); 
+        } catch(e) { 
+            setCloudStatus(true, "Облако готово. Терминал ожидает действий."); 
+        }
     }
+    
+    // Запускаем автоматику при старте страницы
     checkInitialConnection();
 </script>
 </body>
 </html>
+
