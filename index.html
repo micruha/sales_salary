@@ -345,14 +345,10 @@
             item.innerHTML = "<div class=\"op-info\"><span style=\"font-weight:bold;\">" + op.title + "</span><span class=\"op-meta\">" + op.time + " | " + details + "</span>" + bonusText + "</div><div class=\"op-right\"><span>" + (op.type === "sale" ? "+" : "-") + ((op.cash || 0) + (op.card || 0)).toLocaleString() + " ₸</span><button class=\"btn-delete\" onclick=\"deleteOp('" + op.id + "', event)\">❌</button></div>"; operationsContainer.appendChild(item);
         });
     }
-    // ОТДЕЛЬНАЯ ФУНКЦИЯ ДЛЯ ВХОДА И ЗАГРУЗКИ ДАННЫХ ИЗ GOOGLE
+    // НАДЁЖНАЯ ФУНКЦИЯ ВХОДА НА ТОЧКУ
     async function enterToCurrentPoint() {
         let data = await runCloud("get");
-        if (!data) {
-            setCloudStatus(false, "Ошибка ответа Google Таблицы. Проверьте настройки точки.");
-            return;
-        }
-
+        if (!data) return alert("Ошибка связи с таблицей Google");
 
         gatePointSelect.style.display = "none";
 
@@ -374,12 +370,13 @@
         }
     }
 
-    // САМА КНОПКА ТЕПЕРЬ ПРОСТО КЛАДЕТ ТОЧКУ В ПАМЯТЬ И ВЫЗЫВАЕТ ЭТУ ФУНКЦИЮ
+    // ОБРАБОТЧИК КНОПКИ ВХОДА
     btnCheckPoint.addEventListener("click", async () => {
         localStorage.setItem("kassa_saved_point", selectedPoint.value);
         currentPoint = selectedPoint.value;
         await enterToCurrentPoint();
     });
+
 
     btnBackToPoints.addEventListener("click", () => { gateShiftOpen.style.display = "none"; gatePointSelect.style.display = "flex"; });
     btnOpenShiftConfirm.addEventListener("click", async () => {
