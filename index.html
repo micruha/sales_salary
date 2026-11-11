@@ -405,8 +405,9 @@ function renderOpenEmpPool() {
         history.forEach(op => {
             let item = document.createElement("div"); item.className = "op-item type-" + op.type;
             let details = op.cash > 0 ? "Наличные: " + op.cash.toLocaleString() + " тг." : ""; if (op.card > 0) details += (details ? " | " : "") + "Безнал: " + op.card.toLocaleString() + " тг.";
-            let bonusText = op.type === "sale" ? "<span style=\"color:var(--warn);font-size:0.75rem;\">Мотивация: " + op.bonus + "%</span>" : "";
-            item.innerHTML = "<div class=\"op-info\"><span style=\"font-weight:bold;\">" + op.title + "</span><span class=\"op-meta\">" + op.time + " | " + details + "</span>" + bonusText + "</div><div class=\"op-right\"><span>" + (op.type === "sale" ? "+" : "-") + ((op.cash || 0) + (op.card || 0)).toLocaleString() + " ₸</span><button class=\"btn-delete\" onclick=\"deleteOp('" + op.id + "', event)\">❌</button></div>"; operationsContainer.appendChild(item);
+            // Текст мотивации выводим всегда, без ограничений по типу операции
+            let bonusText = "<span style=\"color:var(--warn);font-size:0.75rem;\">Мотивация: " + op.bonus + "%</span>";
+            item.innerHTML = "<div class=\"op-info\"><span style=\"font-weight:bold;\">" + op.title + "</span><span class=\"op-meta\">" + op.time + " | " + details + "</span>" + bonusText + "</div><div class=\"op-right\"><span>" + (op.type === "sale" ? "+" : "-") + ((op.cash || 0) + (op.card || 0)).toLocaleString() + " ₸</span><button class=\"btn-delete\" onclick=\"deleteOp('" + op.id + "', event)\">❌</button></div>";
         });
     }
     // НАДЁЖНАЯ ФУНКЦИЯ ВХОДА НА ТОЧКУ
