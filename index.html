@@ -444,7 +444,7 @@ function renderOpenEmpPool() {
 
     btnBackToPoints.addEventListener("click", () => { gateShiftOpen.style.display = "none"; gatePointSelect.style.display = "flex"; });
     btnOpenShiftConfirm.addEventListener("click", async () => {
-        if (!checkShiftTimeBlock()) return;
+        //if (!checkShiftTimeBlock()) return;
         
         // Находим строго ВСЕ активированные плитки сотрудников
         let selectedCards = openEmpPool.querySelectorAll(".emp-card.active");
