@@ -73,7 +73,33 @@
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
         @media (max-width: 900px) { .workspace { grid-template-columns: 1fr; } .form-row { grid-template-columns: 1fr; } }
-        @media print { body * { visibility: hidden; } #modal-close-shift, #modal-close-shift * { visibility: visible; } #modal-close-shift { position: absolute; left: 0; top: 0; width: 100%; } .modal-btns { display: none; } }
+        @media print {
+            @page {
+                margin: 0;
+            }
+            body {
+                padding: 1.5cm;
+                background: #ffffff;
+                color: #000000;
+                counter-reset: pageCounter;
+            }
+            body * { visibility: hidden; }
+            #modal-close-shift, #modal-close-shift * { visibility: visible; }
+            #modal-close-shift { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; }
+            #modal-close-shift::after {
+                content: "Страница " counter(pageCounter);
+                counter-increment: pageCounter;
+                position: fixed;
+                bottom: 1cm;
+                right: 1.5cm;
+                font-family: sans-serif;
+                font-size: 10px;
+                color: #000000;
+                visibility: visible;
+            }
+            .modal-btns { display: none; }
+            .btn-delete { display: none !important; }
+        }
     </style>
 </head>
 <body>
