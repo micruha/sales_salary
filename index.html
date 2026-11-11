@@ -219,6 +219,10 @@
         </div>
         
         <button class="btn-return" id="btn-trigger-close-shift" style="width:100%; background:#7a1c1c; margin-top: 15px; height: 50px;">■ Закрыть смену и рассчитать выплаты</button>
+        
+        <!-- Удалить после настройки бланка печати -->
+        <button id="btn-test-print" style="background:#e91e63; color:white; border:none; padding:12px; border-radius:6px; font-weight:bold; cursor:pointer; margin-top:10px; width:100%;">📸 Тест Печати Z-Отчёта</button>
+
     </div>
 
     <!-- ПРАВАЯ КОЛОНКА: ЖИВОЙ ЖУРНАЛ ОПЕРАЦИЙ -->
@@ -572,6 +576,22 @@ function renderOperations() {
 
     btnDoSale.addEventListener("click", () => addOperation("sale")); btnDoReturn.addEventListener("click", () => addOperation("return"));
     window.deleteOp = async function(id, event) { if (event) event.stopPropagation(); if (confirm("Удалить операцию?")) { history = history.filter(op => op.id !== id); renderOperations(); calculateTotals(); await runCloud("deleteOperation", { id: id }); } };
+    
+
+        // ОЖИВЛЯЕМ ТЕСТОВУЮ КНОПКУ ПЕЧАТИ Z-ОТЧЕТА
+        const btnTestPrint = document.getElementById("btn-test-print");
+        if (btnTestPrint) {
+            btnTestPrint.onclick = () => {
+                const m = document.getElementById("modal-close-shift");
+                if (m) { 
+                    m.style.display = "block"; // Открываем бланк Z-отчёта
+                    window.print();           // Сразу вызываем окно принтера
+                }
+            };
+        }
+
+
+
     btnTriggerCloseShift.addEventListener("click", () => {
         let calc = calculateTotals(); salaryTableBody.innerHTML = "";
         activeEmployees.forEach((emp, index) => {
