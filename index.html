@@ -33,12 +33,10 @@
         h2 { font-size: 1.15rem; font-weight: 600; padding-bottom: 10px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
         .shift-badge { font-size: 0.8rem; background: #21262d; padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border); color: var(--primary); font-weight: bold; }
         .form-group { display: flex; flex-direction: column; gap: 5px; text-align: left; }
-
         .form-group label { font-size: 0.9rem; font-weight: bold; color: var(--primary); letter-spacing: 0.5px; }
         input, select { background: #0d1117; border: 2px solid #444c56; color: #fff; padding: 12px; border-radius: 8px; font-size: 1.05rem; font-weight: 500; outline: none; width: 100%; transition: all 0.2s; }
         input:focus, select:focus { border-color: var(--primary); background: #1c2128; box-shadow: 0 0 10px rgba(0, 173, 181, 0.25); }
         input::placeholder { color: #57606a; }
-
         .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px; }
         button { padding: 12px; font-size: 0.95rem; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; color: #fff; transition: background 0.2s; }
         .btn-sale { background: var(--success); }
@@ -103,17 +101,12 @@
     </style>
 </head>
 <body>
-
-<!-- ОКНО ВЫБОРА ТОЧКИ (С ИНДИКАТОРОМ ОБЛАКА И ИНСТРУКЦИЕЙ) -->
 <div class="gate-box" id="gate-point-select" style="display: localStorage.getItem('kassa_saved_point') ? 'none' : 'flex';">
-
     <div class="sync-headline">
         <h2 style="border:none; padding:0;">Выбор торговой точки</h2>
         <span class="cloud-dot cloud-offline" id="cloud-indicator"></span>
     </div>
     <p class="cloud-text" id="cloud-status-text">Проверка связи с облаком...</p>
-    
-    <!-- ИНСТРУКЦИЯ ДЛЯ СОТРУДНИКОВ -->
     <div style="background: rgba(0, 173, 181, 0.08); border: 1px solid var(--primary); padding: 15px; border-radius: 8px; text-align: left; font-size: 0.85rem; line-height: 1.45; color: #c9d1d9; margin: 5px 0;">
         <b style="color: var(--primary); display: block; margin-bottom: 5px; font-size: 0.9rem;">📌 Инструкция по работе с терминалом:</b>
         1. Убедитесь, что индикатор сверху горит <span style="color:#2ecc71; font-weight:bold;">зелёным</span> (Облако онлайн).<br>
@@ -122,7 +115,6 @@
         4. Если смена закрыта - выберите работающих сегодня сотрудников.<br>
         5. Все продажи и расходы сохраняются в облаке автоматически.
     </div>
-    
     <div class="form-group" style="margin-top: 5px;">
         <label>Укажите текущую торговую точку:</label>
         <select id="selected-point">
@@ -134,53 +126,38 @@
     </div>
     <button class="btn-blue" id="btn-check-point">Войти и проверить смену</button>
 </div>
-
-<!-- ОКНО ОТКРЫТИЯ СМЕНЫ И НАСТРОЙКИ СОТРУДНИКОВ -->
 <div class="gate-box" id="gate-shift-open" style="display:none; max-width: 600px;">
     <h2 style="border:none; padding:0; color:var(--warn); justify-content: center;">Открытие новой смены</h2>
     <p id="gate-point-display" style="font-size:0.95rem; color:var(--primary); font-weight:bold;"></p>
-    
-    <!-- ПОДСКАЗКА ПО КАДРАМ -->
     <div style="background: rgba(241, 196, 15, 0.08); border: 1px solid var(--warn); padding: 12px; border-radius: 8px; text-align: left; font-size: 0.85rem; color: var(--text); margin: 5px 0;">
         <b>💡 Подсказка:</b> Кликните по именам тех, кто сегодня находится в зале. Если сотруднику положен только фиксированный оклад за день без деления процентов от мотивации, обязательно отметьте галочку <u>«Только ставка»</u> внутри его плитки. Добавить или удалить сотрудника так-же можно в открытой смене.
     </div>
-    
     <div class="form-group">
         <label>Выберите работающих сотрудников (кликните для активации):</label>
         <div class="emp-grid" id="open-emp-pool">
-            <!-- Сюда JS подгрузит плитки сотрудников из базы -->
         </div>
     </div>
-    
     <div class="form-group">
         <label>Базовый дневной оклад на одного сотрудника (тг.):</label>
         <input type="number" id="base-salary-input" value="10000" step="500">
     </div>
-    
     <button class="btn-sale" id="btn-open-shift-confirm" style="margin-top:5px;">▶ Открыть смену для выбранного состава</button>
     <button class="btn-gray" id="btn-back-to-points">← Назад к выбору торговой точки</button>
 </div>
-<!-- ОСНОВНОЙ РАБОЧИЙ ДВУХКОЛОНОЧНЫЙ ТЕРМИНАЛ -->
 <div class="workspace" id="main-terminal" style="display: localStorage.getItem('kassa_saved_point') ? 'grid' : 'none';">
-
-    <!-- ЛЕВАЯ КОЛОНКА: ВВОД ОПЕРАЦИЙ, ПЕРСОНАЛ, ИТОГИ -->
     <div class="column">
         <h2>
             <span>Панель ввода и отчёты</span>
             <span class="shift-badge" id="terminal-point-badge">Точка</span>
         </h2>
-        
-        <!-- Поля ввода новой продажи или расхода (ТЕПЕРЬ НАВЕРХУ И ВЫДЕЛЕНЫ) -->
         <div class="form-group" style="margin-top: 5px;">
             <label>Наименование товара / расхода:</label>
             <input type="text" id="op-title" placeholder="Например: ПДУ, Зарядка, Пакеты">
         </div>
-        
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
             <div class="form-group"><label>Наличные (тг.):</label><input type="number" id="op-cash" value="0" step="100"></div>
             <div class="form-group"><label>Безналичные (тг.):</label><input type="number" id="op-card" value="0" step="100"></div>
         </div>
-        
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 5px;">
             <div class="form-group">
                 <label>Процент мотивации (%):</label>
@@ -199,8 +176,6 @@
                 </div>
             </div>
         </div>
-
-        <!-- Итоги дня на лету -->
         <div class="salary-box" style="margin-top:10px;">
             <div class="info-line"><span>Всего касса за день:</span><span id="total-kassa" style="font-weight:bold; color:var(--primary);">0 тг.</span></div>
             <div class="info-line"><span>Наличные в кассе:</span><span id="total-cash" style="font-weight:bold; color:var(--success);">0 тг.</span></div>
@@ -208,33 +183,20 @@
             <div class="info-line"><span>Общая премия (% от продаж):</span><span id="total-bonus-pool" style="font-weight:bold; color:var(--warn);">0 тг.</span></div>
             <div class="info-line" style="border-bottom:none;"><span>Премия каждому сотруднику:</span><span id="bonus-per-head" style="font-weight:bold; color:#9b59b6;">0 тг.</span></div>
         </div>
-
-        <!-- Управление персоналом прямо на смене (ПЕРЕНЕСЕНО ВНИЗ) -->
         <div class="form-group" style="margin-top: 10px; border-top: 1px solid var(--border); padding-top: 15px;">
             <label style="color: var(--text);">Сотрудники на текущей смене:</label>
             <div class="live-emp-list" id="live-emp-container" style="margin-top: 5px;">
-                <!-- Живой список работающих сотрудников -->
             </div>
             <button class="btn-gray" id="btn-trigger-add-emp" style="padding:8px; font-size:0.85rem; margin-top:8px;"> Добавить сотрудника в смену</button>
-        </div>
-        
+        </div> 
         <button class="btn-return" id="btn-trigger-close-shift" style="width:100%; background:#7a1c1c; margin-top: 15px; height: 50px;">■ Закрыть смену и рассчитать выплаты</button>
-        
-        <!-- Удалить после настройки бланка печати -->
-        <button id="btn-test-print" style="background:#e91e63; color:white; border:none; padding:12px; border-radius:6px; font-weight:bold; cursor:pointer; margin-top:10px; width:100%;">📸 Тест Печати Z-Отчёта</button>
-
     </div>
-
-    <!-- ПРАВАЯ КОЛОНКА: ЖИВОЙ ЖУРНАЛ ОПЕРАЦИЙ -->
     <div class="column">
         <h2>Журнал продаж и расходов за сегодня</h2>
         <div class="op-list" id="operations-container">
-            <!-- Список всех чеков -->
         </div>
     </div>
 </div>
-
-<!-- МОДАЛЬНОЕ ОКНО 1: ДОБАВЛЕНИЕ НА ЛЕТУ -->
 <div class="modal-overlay" id="modal-add-emp">
     <div class="modal-box">
         <h2 style="border:none; padding:0; color:var(--primary);">Включение сотрудника в смену</h2>
@@ -243,8 +205,6 @@
         <div class="modal-btns"><button class="btn-sale" id="btn-confirm-add-emp">Добавить в смену</button><button class="btn-gray" id="btn-cancel-add-emp">Отмена</button></div>
     </div>
 </div>
-
-<!-- МОДАЛЬНОЕ ОКНО 2: ВЕДОМОСТЬ ЗАРПЛАТ С РУЧНЫМИ ПРАВКАМИ -->
 <div class="modal-overlay" id="modal-close-shift">
     <div class="modal-box" style="max-width: 650px;">
         <h2 style="border:none; padding:0; color:var(--warn);">Ведомость по зарплатам за смену</h2>
@@ -258,10 +218,8 @@
     </div>
 </div>
 <script>
-
     (async function() {
-        const PASSWORD_HASH = "647b2bb403b818ef801a32c1b3bc5390ae98a7aa56cf1fbb64dff7691641397b";
-        
+        const PASSWORD_HASH = "647b2bb403b818ef801a32c1b3bc5390ae98a7aa56cf1fbb64dff7691641397b";    
         if (sessionStorage.getItem("admin_passed") !== "true") {
             let passInput = prompt("Вход заблокирован. Введите секретный пароль администратора:");
             if (!passInput) return fail();
@@ -282,7 +240,6 @@
             throw new Error("Блокировка доступа.");
         }
     })();
-
     document.addEventListener('contextmenu', e => e.preventDefault());
     document.addEventListener('keydown', e => {
         if (e.key === 'F12' || 
@@ -291,10 +248,8 @@
             e.preventDefault();
             return false;
         }
-    });    
-
+    });
     const CONFIG_CLOUD_URL = "https://script.google.com/macros/s/AKfycbyktok79zqXQXI3_3fNIoHPNtCG5u3gPaMGZGVWYOQHivdr5lMr3YZOvRa2_cxyL7SH/exec";
-
     const masterEmployeeList = [
         { id: "emp1", name: "Михаил Кренник", isEditable: false },
         { id: "emp2", name: "Игорь Кочергин", isEditable: false },
@@ -311,10 +266,7 @@
         { id: "temp2", name: "Сотрудник 2", isEditable: true },
         { id: "temp3", name: "Сотрудник 3", isEditable: true }
     ];
-
     let currentPoint = "Техносити"; let activeEmployees = []; let history = []; let baseSalaryGlobal = 6000;
-
-    // СВЯЗКА ЭЛЕМЕНТОВ ИНТЕРФЕЙСА
     const cloudIndicator = document.getElementById("cloud-indicator"), cloudStatusText = document.getElementById("cloud-status-text");
     const gatePointSelect = document.getElementById("gate-point-select"), selectedPoint = document.getElementById("selected-point"), btnCheckPoint = document.getElementById("btn-check-point");
     const gateShiftOpen = document.getElementById("gate-shift-open"), gatePointDisplay = document.getElementById("gate-point-display"), openEmpPool = document.getElementById("open-emp-pool"), baseSalaryInput = document.getElementById("base-salary-input"), btnOpenShiftConfirm = document.getElementById("btn-open-shift-confirm"), btnBackToPoints = document.getElementById("btn-back-to-points");
@@ -323,19 +275,16 @@
     const totalKassa = document.getElementById("total-kassa"), totalCash = document.getElementById("total-cash"), totalCard = document.getElementById("total-card"), totalBonusPool = document.getElementById("total-bonus-pool"), bonusPerHead = document.getElementById("bonus-per-head"), btnTriggerCloseShift = document.getElementById("btn-trigger-close-shift");
     const modalAddEmp = document.getElementById("modal-add-emp"), modalAddEmpSelect = document.getElementById("modal-add-emp-select"), modalAddEmpMode = document.getElementById("modal-add-emp-mode"), btnConfirmAddEmp = document.getElementById("btn-confirm-add-emp"), btnCancelAddEmp = document.getElementById("btn-cancel-add-emp");
     const modalCloseShift = document.getElementById("modal-close-shift"), salaryTableBody = document.getElementById("salary-table-body"), modalCashDrawer = document.getElementById("modal-cash-drawer"), btnCloseShiftFinal = document.getElementById("btn-close-shift-final"), btnCancelCloseShift = document.getElementById("btn-cancel-close-shift");
-
     function setCloudStatus(isOnline, text) {
         if(isOnline) { cloudIndicator.className = "cloud-dot cloud-online"; cloudStatusText.textContent = text || "Облако онлайн. Соединение стабильно."; cloudStatusText.style.color = "#2ecc71"; } 
         else { cloudIndicator.className = "cloud-dot cloud-offline"; cloudStatusText.textContent = text || "Облако оффлайн. Нет связи с базой данных."; cloudStatusText.style.color = "#e74c3c"; }
     }
-
     async function runCloud(action, payload = {}) {
         if (!CONFIG_CLOUD_URL || CONFIG_CLOUD_URL.includes("СЮДА_ВСТАВЬТЕ")) {
             setCloudStatus(false, "Ошибка: ссылка не прописана!"); return null;
         }
         try {
             payload.point = currentPoint; payload.action = action;
-            // Убираем mode: "no-cors", чтобы браузер разрешил прочитать ответ таблицы
             let res = await fetch(CONFIG_CLOUD_URL, {
                 method: "POST",
                 headers: { "Content-Type": "text/plain" },
@@ -349,16 +298,11 @@
             return { status: "success" };
         } catch (err) { setCloudStatus(false); return null; }
     }
-
-
-
-
     function checkShiftTimeBlock() {
         let hours = new Date().getHours();
         if (hours < 7 || hours >= 19) { alert("Ошибка доступа! Смену можно открыть только с 07:00 до 19:00."); return false; }
         return true;
     }
-
     function calculateTotals() {
         let tKassa = 0, tCash = 0, tCard = 0, tBonus = 0;
         history.forEach(op => {
@@ -368,7 +312,7 @@
                 tBonus += Math.round((cash + card) * (bonusPct / 100)); 
             } else if (op.type === "return") { 
                 tKassa -= (cash + card); tCash -= cash; tCard -= card; 
-                tBonus -= Math.round((cash + card) * (bonusPct / 100)); // Вычитаем процент за возврат/расходы
+                tBonus -= Math.round((cash + card) * (bonusPct / 100));
             }
         });
         let bonusSharersCount = activeEmployees.filter(e => !e.isOnlyBase).length;
@@ -377,49 +321,32 @@
         bonusPerHead.textContent = perHeadBonus.toLocaleString() + " тг. (" + bonusSharersCount + " чел.)";
         return { totalKassa: tKassa, totalCash: tCash, totalCard: tCard, totalBonus: tBonus, perHeadBonus: perHeadBonus };
     }
-
 function renderOpenEmpPool() {
     openEmpPool.innerHTML = "";
-    
-    // Список сотрудников, у которых НЕЛЬЗЯ выбрать фиксированный оклад
     let noBaseOnly = ["Михаил Кренник", "Игорь Кочергин", "Татьяна Мецкер", "Вадим Ливит", "Ринат Бекметов", "Владимир Дмитриенко", "Анастасия Зеленская", "Марат Валитов", "Никита Проскурин", "Алексей Проскурин", "Администратор"];
-    
     masterEmployeeList.forEach(emp => {
         let card = document.createElement("div"); 
         card.className = "emp-card"; 
         card.dataset.id = emp.id;
-        
         let nameContent = emp.isEditable 
             ? "<input type=\"text\" class=\"edit-name-input\" value=\"" + emp.name + "\" onclick=\"event.stopPropagation()\" onchange=\"updateTempName('" + emp.id + "', this.value)\">" 
             : "<span class=\"emp-name-text\">" + emp.name + "</span>";
-        
-        // По умолчанию блок пустой
         let toggleHTML = ""; 
-        
-        // Включаем общее флекс-центрирование по горизонтали для КАЖДОЙ плитки
         card.style.display = "flex";
         card.style.flexDirection = "column";
-        card.style.alignItems = "center";     // Ровняем всё строго по центру (влево-вправо)
-        card.style.textAlign = "center";       // Текст внутри тоже по центру
-        
-        // Если сотрудника нет в списке запрета, добавляем ему галочку
+        card.style.alignItems = "center";
+        card.style.textAlign = "center";
         if (!noBaseOnly.includes(emp.name)) {
             toggleHTML = "<div class=\"mode-toggle\" onclick=\"event.stopPropagation()\"><label><input type=\"checkbox\" class=\"mode-chk\"> Только ставка</label></div>";
-            
-            // Если галочка есть, прижимаем контент к верху, чтобы оставалось место под чекбокс
             card.style.justifyContent = "flex-start"; 
         } else {
-            // Если галочки нет, центрируем имя ещё и по вертикали (сверху-вниз)
             card.style.justifyContent = "center"; 
         }
-        
         card.innerHTML = "<div class=\"emp-name\">" + nameContent + "</div>" + toggleHTML;
-
         card.addEventListener("click", () => { card.classList.toggle("active"); }); 
         openEmpPool.appendChild(card);
     });
 }
-
     window.updateTempName = function(id, newVal) { let emp = masterEmployeeList.find(e => e.id === id); if (emp && newVal.trim()) emp.name = newVal.trim(); };
     function renderLiveEmployees() {
         liveEmpContainer.innerHTML = "";
@@ -436,30 +363,20 @@ function renderOperations() {
         operationsContainer.innerHTML = "<div style=\"text-align:center;color:var(--muted);padding:20px;\">Операций за сегодня нет</div>"; 
         return; 
     }
-    
     history.forEach(op => {
         let item = document.createElement("div"); 
         item.className = "op-item type-" + op.type;
-        
         let details = op.cash > 0 ? "Наличные: " + op.cash.toLocaleString() + " тг." : ""; 
         if (op.card > 0) details += (details ? " | " : "") + "Безнал: " + op.card.toLocaleString() + " тг.";
-        
-        // Текст мотивации выводим всегда, без ограничений по типу операции
         let bonusText = "<span style=\"color:var(--warn);font-size:0.75rem;\">Мотивация: " + op.bonus + "%</span>";
-        
         item.innerHTML = "<div class=\"op-info\"><span style=\"font-weight:bold;\">" + op.title + "</span><span class=\"op-meta\">" + op.time + " | " + details + "</span>" + bonusText + "</div><div class=\"op-right\"><span>" + (op.type === "sale" ? "+" : "-") + ((op.cash || 0) + (op.card || 0)).toLocaleString() + " ₸</span><button class=\"btn-delete\" onclick=\"deleteOp('" + op.id + "', event)\">❌</button></div>";
-        
         operationsContainer.appendChild(item);
     });
 }
-
-    // НАДЁЖНАЯ ФУНКЦИЯ ВХОДА НА ТОЧКУ
     async function enterToCurrentPoint() {
         let data = await runCloud("get");
         if (!data) return alert("Ошибка связи с таблицей Google");
-
         gatePointSelect.style.display = "none";
-
         if (data.isOpen) {
             activeEmployees = data.info.employees || [];
             history = data.operations || [];
@@ -477,43 +394,28 @@ function renderOperations() {
             renderOpenEmpPool();
         }
     }
-
-    // ОБРАБОТЧИК КНОПКИ ВХОДА
     btnCheckPoint.addEventListener("click", async () => {
         localStorage.setItem("kassa_saved_point", selectedPoint.value);
         currentPoint = selectedPoint.value;
         await enterToCurrentPoint();
     });
-
-
     btnBackToPoints.addEventListener("click", () => { gateShiftOpen.style.display = "none"; gatePointSelect.style.display = "flex"; });
     btnOpenShiftConfirm.addEventListener("click", async () => {
         if (!checkShiftTimeBlock()) return;
-        
-        // Находим строго ВСЕ активированные плитки сотрудников
         let selectedCards = openEmpPool.querySelectorAll(".emp-card.active");
-        
-        // ЖЁСТКАЯ ПРОВЕРКА: Если плиток нет — прерываем выполнение и ругаемся
         if (selectedCards.length === 0) {
             alert("⚠️ Внимание! Нельзя открыть смену без сотрудников.\nПожалуйста, кликните по именам работающих сегодня людей, чтобы они подсветились зелёным.");
             return; 
         }
-        
         baseSalaryGlobal = Number(baseSalaryInput.value) || 6000; activeEmployees = [];
         selectedCards.forEach(card => {
             let id = card.dataset.id;
             let empBase = masterEmployeeList.find(e => e.id === id);
-        
-            // Безопасное чтение: если чекбокса нет, пишем false
             let chk = card.querySelector(".mode-chk");
             let isOnlyBase = chk ? chk.checked : false;
-        
             activeEmployees.push({ id: id, name: empBase.name, isOnlyBase: isOnlyBase, baseSalary: baseSalaryGlobal });
-
-        });
-        
+        }); 
         await runCloud("openShift", { employees: activeEmployees });
-        
         gateShiftOpen.style.display = "none"; 
         terminalPointBadge.textContent = currentPoint; 
         mainTerminal.style.display = "grid"; 
@@ -522,7 +424,6 @@ function renderOperations() {
         renderOperations(); 
         calculateTotals();
     });
-
     btnTriggerAddEmp.addEventListener("click", () => {
         modalAddEmpSelect.innerHTML = ""; let workingIds = activeEmployees.map(e => e.id), bench = masterEmployeeList.filter(e => !workingIds.includes(e.id));
         if (!bench.length) return alert("Все сотрудники уже на смене!");
@@ -539,11 +440,9 @@ function renderOperations() {
         if (activeEmployees.length <= 1) return alert("На смене должен оставаться хотя бы один сотрудник!");
         if (confirm("Убрать сотрудника со смены?")) { activeEmployees = activeEmployees.filter(e => e.id !== id); renderLiveEmployees(); calculateTotals(); await runCloud("updateEmployees", { employees: activeEmployees }); }
     };
-    // СИНХРОННАЯ ФУНКЦИЯ ДОБАВЛЕНИЯ ЧЕКА С ИСПРАВЛЕННЫМ ОЖИДАНИЕМ
     async function addOperation(type) {
         let title = opTitle.value.trim(), cash = Number(opCash.value) || 0, card = Number(opCard.value) || 0;
-        if (!title || (cash <= 0 && card <= 0)) return alert("Введите наименование и сумму!");
-        
+        if (!title || (cash <= 0 && card <= 0)) return alert("Введите наименование и сумму!");  
         let opData = { 
             id: "op_" + Date.now() + Math.random().toString(36).substr(2,4), 
             time: new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }), 
@@ -553,65 +452,32 @@ function renderOperations() {
             bonus: Number(opBonusPct.value), 
             type 
         };
-        
-        // Блокируем поля на время отправки чека в сеть
         opTitle.disabled = opCash.disabled = opCard.disabled = true;
-        
         history.push(opData); 
         renderOperations(); 
         calculateTotals();
-        
-        // Отправляем данные в Google и просто ждём завершения запроса
         await runCloud("addOperation", opData);
-        
-        // Разблокируем поля кассы для новой продажи
         opTitle.disabled = opCash.disabled = opCard.disabled = false;
-        
         opTitle.value = ""; 
         opCash.value = "0"; 
         opCard.value = "0";
     }
-
-
-
     btnDoSale.addEventListener("click", () => addOperation("sale")); btnDoReturn.addEventListener("click", () => addOperation("return"));
     window.deleteOp = async function(id, event) { if (event) event.stopPropagation(); if (confirm("Удалить операцию?")) { history = history.filter(op => op.id !== id); renderOperations(); calculateTotals(); await runCloud("deleteOperation", { id: id }); } };
-    
-
-        // ОЖИВЛЯЕМ ТЕСТОВУЮ КНОПКУ ПЕЧАТИ Z-ОТЧЕТА
-        const btnTestPrint = document.getElementById("btn-test-print");
-        if (btnTestPrint) {
-            btnTestPrint.onclick = () => {
-                const m = document.getElementById("modal-close-shift");
-                if (m) { 
-                    m.style.display = "block"; // Открываем бланк Z-отчёта
-                    window.print();           // Сразу вызываем окно принтера
-                }
-            };
-        }
-
-
-
     btnTriggerCloseShift.addEventListener("click", () => {
         let calc = calculateTotals(); salaryTableBody.innerHTML = "";
         activeEmployees.forEach((emp, index) => {
             let bonusAmount = emp.isOnlyBase ? 0 : calc.perHeadBonus;
-            // Округляем Итого до 100 тенге
             let exactPay = emp.baseSalary + bonusAmount;
             let totalPayRounded = Math.round(exactPay / 100) * 100;
-            
             let row = document.createElement("tr");
             row.innerHTML = "<td><b>" + emp.name + "</b></td><td><span class=\"emp-status-text " + (emp.isOnlyBase ? "status-lbl-base" : "status-lbl-both") + "\">" + (emp.isOnlyBase ? "Только ставка" : "Ставка + %") + "</span></td><td><input type=\"number\" class=\"edit-base-salary\" data-index=\"" + index + "\" value=\"" + emp.baseSalary + "\" step=\"500\"></td><td><input type=\"number\" class=\"edit-bonus-salary\" data-index=\"" + index + "\" value=\"" + bonusAmount + "\" step=\"500\" " + (emp.isOnlyBase ? "disabled style=\"opacity:0.3;\"" : "") + "></td><td><b class=\"row-total\">" + totalPayRounded + "</b> тг.</td>";
-
             salaryTableBody.appendChild(row);
         });
-        
-        // Считаем остаток наличных в кассе за вычетом дефолтных зарплат
         let totalStaffPayout = 0;
         activeEmployees.forEach(emp => { totalStaffPayout += (emp.baseSalary + (emp.isOnlyBase ? 0 : calc.perHeadBonus)); });
         let cashDrawerLeft = calc.totalCash - totalStaffPayout;
-        modalCashDrawer.textContent = (cashDrawerLeft < 0 ? 0 : cashDrawerLeft).toLocaleString() + " тг.";
-        
+        modalCashDrawer.textContent = (cashDrawerLeft < 0 ? 0 : cashDrawerLeft).toLocaleString() + " тг.";  
         salaryTableBody.querySelectorAll("input").forEach(input => {
             input.addEventListener("input", () => {
                 let rows = salaryTableBody.querySelectorAll("tr"), newStaffTotal = 0;
@@ -626,7 +492,6 @@ function renderOperations() {
         });
         modalCloseShift.style.display = "flex";
     });
-
     btnCancelCloseShift.addEventListener("click", () => { modalCloseShift.style.display = "none"; });
     btnCloseShiftFinal.addEventListener("click", async () => {
         if (!confirm("Окончательно закрыть смену?")) return;
@@ -637,12 +502,9 @@ function renderOperations() {
             totalPayoutCash += finalRounded;
             finalSalariesList.push({ name: emp.name, isOnlyBase: emp.isOnlyBase, baseSalary: b, calculatedBonus: bn, finalTotal: finalRounded });
         });
-        
         let salesLeftColumn = "", salesRightColumn = "", expensesRows = "", staffRows = "", idx = 0;
         let allSales = history.filter(op => op.type === "sale");
-        
         let totalSalesCash = 0, totalSalesCard = 0, totalExpCash = 0, totalExpCard = 0;
-
         allSales.forEach(op => {
             let c = Number(op.cash || 0), cd = Number(op.card || 0);
             totalSalesCash += c; totalSalesCard += cd;
@@ -651,31 +513,24 @@ function renderOperations() {
             if (idx % 2 === 0) salesLeftColumn += rowHtml; else salesRightColumn += rowHtml;
             idx++;
         });
-
         history.filter(op => op.type === "return").forEach(op => {
             let c = Number(op.cash || 0), cd = Number(op.card || 0);
             totalExpCash += c; totalExpCard += cd;
             let typeLbl = c > 0 && cd > 0 ? "Нал+Карт" : (c > 0 ? "Нал" : "Карта");
             expensesRows += "<tr><td style=\"font-size:10px;color:#555;\">" + (op.time || "--:--") + "</td><td>" + op.title + " <span style=\"font-size:9px;color:#666;\">(" + typeLbl + ")</span></td><td>" + (c + cd).toLocaleString() + " ₸</td></tr>";
         });
-
         finalSalariesList.forEach(emp => {
             staffRows += "<tr><td><b>" + emp.name + "</b></td><td>" + (emp.isOnlyBase ? "Ставка" : "Ставка + %") + "</td><td><b>" + emp.finalTotal.toLocaleString() + " ₸</b></td></tr>";
         });
-        
-        // ФАКТИЧЕСКИЙ РАСЧЕТ: Убираем ограничение нуля, разрешаем уходить в минус
         let finalDrawerCash = totalSalesCash - totalExpCash - totalPayoutCash; 
         let isNegative = finalDrawerCash < 0;
         let colorStyle = isNegative ? "color:#da3637;" : "color:green;";
-        
         let printWin = window.open("", "_blank");
         let styleBlock = "<style>body{font-family:sans-serif;padding:10px;color:#000;background:#fff;font-size:11px;}table{width:100%;border-collapse:collapse;margin-top:5px;margin-bottom:10px;}th,td{border:1px solid #000;padding:5px;text-align:left;font-size:11px;}th{background:#f2f2f2;}h2{text-align:center;font-size:14px;margin:5px 0;}h3{font-size:12px;margin:10px 0 3px 0;border-bottom:1px solid #000;padding-bottom:2px;display:flex;justify-content:space-between;}.sub-tot{font-weight:normal;font-size:10px;color:#444;}.btn-p{padding:5px 15px;background:#000;color:#fff;border:none;border-radius:4px;cursor:pointer;font-weight:bold;font-size:11px;}@media print{.np{display:none;}}</style>";
-        
         let hHead = "<html><head><title>Z-Отчёт</title>" + styleBlock + "</head><body><div class=\"np\"><button class=\"btn-p\" onclick=\"window.print()\">🖨 Печать Z-Отчёта</button></div><h2>Z-ОТЧЁТ ТОРГОВОЙ ТОЧКИ: " + currentPoint + "</h2><p style=\"text-align:center;margin:2px 0;\">Дата закрытия: " + new Date().toLocaleDateString("ru-RU") + "</p><hr>";
         let hSales = "<h3><span>1. СПИСОК ПРОДАЖ</span><span class=\"sub-tot\">Итого продаж — Нал: " + totalSalesCash.toLocaleString() + " ₸ | Безнал: " + totalSalesCard.toLocaleString() + " ₸</span></h3><div style=\"display:flex;gap:15px;\"><div style=\"flex:1;\"><table><thead><tr><th>Время</th><th>Товар</th><th>Сумма</th></tr></thead><tbody>" + (salesLeftColumn || "<tr><td colspan=\"3\">-</td></tr>") + "</tbody></table></div><div style=\"flex:1;\"><table><thead><tr><th>Время</th><th>Товар</th><th>Сумма</th></tr></thead><tbody>" + (salesRightColumn || "<tr><td colspan=\"3\">-</td></tr>") + "</tbody></table></div></div>";
         let hExpenses = "<h3><span>2. СПИСОК ВОЗВРАТОВ И РАСХОДОВ</span><span class=\"sub-tot\">Итого расходов — Нал: " + totalExpCash.toLocaleString() + " ₸ | Безнал: " + totalExpCard.toLocaleString() + " ₸</span></h3><table><thead><tr><th style=\"width:50px;\">Время</th><th>Наименование расхода</th><th style=\"width:90px;\">Сумма</th></tr></thead><tbody>" + (expensesRows || "<tr><td colspan=\"3\" style=\"text-align:center;\">Расходов не было</td></tr>") + "</tbody></table>";
-        let hStaff = "<h3>3. ВЫПЛАТЫ ИЗ КАССЫ</h3><table><thead><tr><th>Сотрудник</th><th style=\"width:120px;\">Режим</th><th style=\"width:90px;\">Выдано</th></tr></thead><tbody>" + staffRows + "</tbody></table>";
-        
+        let hStaff = "<h3>3. ВЫПЛАТЫ ИЗ КАССЫ</h3><table><thead><tr><th>Сотрудник</th><th style=\"width:120px;\">Режим</th><th style=\"width:90px;\">Выдано</th></tr></thead><tbody>" + staffRows + "</tbody></table>"; 
         let hFoot = "<hr><p style=\"font-size:11px;line-height:1.45;\">" +
             "<b>Общая касса:</b> " + calc.totalKassa.toLocaleString() + " тг.<br>" +
             "&nbsp;&nbsp;&nbsp;&nbsp;• Из них Наличные: " + totalSalesCash.toLocaleString() + " тг.<br>" +
@@ -686,30 +541,21 @@ function renderOperations() {
             "<b>Всего выдано зарплат наличными:</b> " + totalPayoutCash.toLocaleString() + " тг.<br>" +
             "<b style=\"font-size:12px;" + colorStyle + "\">ЧИСТЫЙ ОСТАТОК НАЛИЧНЫХ ДЛЯ ИНКАССАЦИИ: " + finalDrawerCash.toLocaleString() + " тг.</b>" +
             "</p></body></html>";
-        
         printWin.document.write(hHead + hSales + hExpenses + hStaff + hFoot); printWin.document.close();
         let res = await runCloud("closeShift", { finalSalariesList: finalSalariesList, totalCashInDrawer: finalDrawerCash, totals: { totalBonus: calc.totalBonus, perEmpBonus: calc.perHeadBonus } });
         if (res) { localStorage.removeItem("kassa_saved_point"); modalCloseShift.style.display = "none"; mainTerminal.style.display = "none"; gatePointSelect.style.display = "flex"; history = []; activeEmployees = []; }
     });
-
-    // НАДЁЖНЫЙ ЗАПУСК: ИНСТАНТ-ПЕРЕХОД ПОСЛЕ F5 (БЕЗ СЛЕПЫХ КЛИКОВ)
     async function checkInitialConnection() {
         if (!CONFIG_CLOUD_URL || CONFIG_CLOUD_URL.includes("СЮДА_ВСТАВЬТЕ")) { 
             setCloudStatus(false, "Ошибка: ссылка не прописана!"); 
             return; 
         }
-
-        // ШАГ 1: Автоход при перезагрузке (F5)
         let savedPoint = localStorage.getItem("kassa_saved_point");
         if (savedPoint) {
             currentPoint = savedPoint;
-            selectedPoint.value = savedPoint; // Выставляем сохраненный филиал в списке
-            
-            // Запускаем вход. Если в этот момент связи с Google нет, касса не зависнет
+            selectedPoint.value = savedPoint;
             enterToCurrentPoint().catch(e => console.log("Фоновый вход ожидает сеть...")); 
         }
-
-        // ШАГ 2: Безопасный фоновый пинг, который зажжет зеленый свет без выдачи алертов
         try { 
             let res = await fetch(CONFIG_CLOUD_URL, { 
                 method: "POST", 
@@ -718,12 +564,9 @@ function renderOperations() {
             }); 
             if (res.ok) setCloudStatus(true); else setCloudStatus(true, "Облако готово к работе."); 
         } catch(e) { 
-            // Если интернет моргнул, всё равно держим статус зеленым, чтобы дать кассиру работать локально
             setCloudStatus(true, "Автономный режим активен."); 
         }
     }
-    
-    // Запуск проверки при старте приложения
     checkInitialConnection();
 </script>
 </body>
