@@ -13,7 +13,96 @@
             --tag-return: rgba(231, 76, 60, 0.15); --tag-return-border: #e74c3c;
         }
         * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
-        body { background-color: var(--bg); color: var(--text); padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 90vh; }
+        body { 
+            background-color: var(--bg); 
+            color: var(--text); 
+            padding: 20px; 
+            display: flex; 
+            flex-direction: column; 
+            align-items: center; 
+            justify-content: center; 
+            min-height: 90vh; 
+        }
+        .a4-doc {
+            max-width: 827px;
+            margin: 0 auto;
+            padding: 20px;
+            background: #fff;
+            color: #000;
+            border: 2px solid #333;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        @page {
+            size: A4;
+            margin: 15mm 10mm 20mm 10mm;
+            @bottom-center {
+                content: "Page " counter(page);
+                font-size: 9px;
+                color: #666;
+            }
+        }
+        @media print {
+            body {
+                background: #ffffff !important;
+                color: #000000 !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                display: block !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+            body * { visibility: hidden; }
+            #modal-close-shift, #modal-close-shift * { visibility: visible; }
+            #modal-close-shift {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                background: #ffffff !important;
+                color: #000000 !important;
+                font-family: sans-serif;
+                font-size: 11px;
+            }
+            #modal-close-shift h2, 
+            #modal-close-shift h3, 
+            #modal-close-shift p, 
+            #modal-close-shift td, 
+            #modal-close-shift th { 
+                color: #000000 !important; 
+            }
+            #modal-close-shift table { 
+                width: 100%; 
+                border-collapse: collapse; 
+                margin-top: 5px; 
+                margin-bottom: 10px; 
+            }
+            #modal-close-shift th, 
+            #modal-close-shift td { 
+                border: 1px solid #000000 !important; 
+                padding: 4px 6px; 
+                text-align: left; 
+                font-size: 10px; 
+            }
+            #modal-close-shift th { 
+                background: #f2f2f2 !important; 
+            }
+            #modal-close-shift h2 { 
+                text-align: center; 
+                font-size: 16px; 
+                margin: 10px 0; 
+                page-break-after: avoid;
+            }
+            #modal-close-shift h3 { 
+                font-size: 13px; 
+                margin: 15px 0 5px 0; 
+                border-bottom: 1px solid #000000; 
+                padding-bottom: 2px; 
+                page-break-after: avoid;
+            }
+            .no-break { page-break-inside: avoid; }
+            .modal-btns, .print-fixed, .btn-delete, .btn-p { display: none !important; }
+        }
         .sync-headline { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 5px; }
         .cloud-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; transition: background 0.3s; }
         .cloud-online { background-color: #2ecc71; box-shadow: 0 0 8px #2ecc71; }
@@ -72,33 +161,6 @@
         ::-webkit-scrollbar { width: 4px; }
         ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
         @media (max-width: 900px) { .workspace { grid-template-columns: 1fr; } .form-row { grid-template-columns: 1fr; } }
-        @media print {
-            @page {
-                margin: 0;
-            }
-            body {
-                padding: 1.5cm;
-                background: #ffffff;
-                color: #000000;
-                counter-reset: pageCounter;
-            }
-            body * { visibility: hidden; }
-            #modal-close-shift, #modal-close-shift * { visibility: visible; }
-            #modal-close-shift { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; }
-            #modal-close-shift::after {
-                content: "Страница " counter(pageCounter);
-                counter-increment: pageCounter;
-                position: fixed;
-                bottom: 1cm;
-                right: 1.5cm;
-                font-family: sans-serif;
-                font-size: 10px;
-                color: #000000;
-                visibility: visible;
-            }
-            .modal-btns { display: none; }
-            .btn-delete { display: none !important; }
-        }
     </style>
 </head>
 <body>
@@ -313,7 +375,7 @@
     }
     function checkShiftTimeBlock() {
         let hours = new Date().getHours();
-        if (hours < 7 || hours >= 19) { alert("Ошибка доступа! Смену можно открыть только с 07:00 до 19:00."); return false; }
+        if (hours < 0 || hours >= 19) { alert("Ошибка доступа! Смену можно открыть только с 07:00 до 19:00."); return false; }
         return true;
     }
     function calculateTotals() {
@@ -558,25 +620,52 @@ function renderOperations() {
         let isNegative = finalDrawerCash < 0;
         let textDecoration = isNegative ? "color:#da3637;" : "color:green;";
         let printWin = window.open("", "_blank");
-        let styleBlock = "<style>@page{size:landscape;margin:0}body{font-family:Arial,sans-serif;color:#000;background:#fff;font-size:10px}table{border-collapse:collapse;width:100%;margin-bottom:5px}th,td{border:1px solid #000;padding:3px 5px;font-size:10x} .report-title{text-align:center;border-bottom:1px solid #000;padding-bottom:5px;margin-bottom:5px;font-size:14px} .sales-grid{display:flex;gap:20px;margin-bottom:5px} .sales-table{width:49%} .sales-table th,.sales-table td{width:100%} .col-left{width:65%;text-align:left} .col-center{width:12%;text-align:center} .col-right{width:23%;text-align:right} .bottom-section{display:flex;gap:20px} .bottom-left{width:45%} .bottom-right{width:50%} .bottom-item{border-bottom:1px dashed #000;padding:3px 0;font-size:10px} .bold-final{font-weight:bold;font-size:12px}</style>";
-        let hHead = "<html><head><title>Z-Отчёт</title>" + styleBlock + "</head><body><div class=\"np\"><button class=\"btn-p\" onclick=\"window.print()\">🖨 Распечатать Z-Отчёт</button></div><h2 style=\"text-align:center;font-size:18px;\">Z-Отчёт " + currentPoint + ". Дата закрытия: " + new Date().toLocaleDateString("ru-RU") + "</h2><hr>";
-        let hSales = "<h3>1. Список продаж</h3><div style=\"display:flex;gap:30px;\"><div style=\"flex:1;\"><table style=\"width:100%;border-collapse:collapse;font-size:10px;\"><tbody>" + (salesLeftColumn || "<tr><td colspan=\"3\" style=\"text-align:center;\">-</td></tr>") + "</tbody></table></div><div style=\"flex:1;\"><table style=\"width:100%;border-collapse:collapse;font-size:10px;\"><tbody>" + (salesRightColumn || "<tr><td colspan=\"3\" style=\"text-align:center;\">-</td></tr>") + "</tbody></table></div></div>";
-        let hExpenses = "<h3>1. Список возвратов и расходов</h3><div style=\"display:flex;gap:30px;\"><div style=\"flex:1;\"><table style=\"width:100%;border-collapse:collapse;font-size:10px;\"><tbody>" + (expensesLeftColumn || "<tr><td colspan=\"3\" style=\"text-align:center;\">-</td></tr>") + "</tbody></table></div><div style=\"flex:1;\"><table style=\"width:100%;border-collapse:collapse;font-size:10px;\"><tbody>" + (expensesRightColumn || "<tr><td colspan=\"3\" style=\"text-align:center;\">-</td></tr>") + "</tbody></table></div></div>";
-        let hStaff = "<h3 style=\"margin:0 0 5px 0;\">3. Выплата из кассы</h3><table style=\"width:100%;border-collapse:collapse;font-size:10px;\"><thead><tr><th>Сотрудник</th><th style=\"width:140px;\">Режим</th><th style=\"width:100px;\">Выдано</th></tr></thead><tbody>" + staffRows + "</tbody></table>";
-        let hFoot = "<hr><p style=\"font-size:11px;line-height:1.5;\">" +
+        let styleBlock = "<style>" +
+            "@page { size: A4 landscape; margin: 10mm; @bottom-center { content: \"Page \" counter(page); font-size: 9px; color: #666; } }" +
+            "body { font-family: sans-serif; color: #000; background: #e9ecef; margin: 0; padding: 20px; }" +
+            ".a4-sheet { width: 1050px; margin: 0 auto; background: #fff; border: 2px solid #333; padding: 25px 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }" +
+            "h2 { text-align: center; font-size: 16px; margin: 0 0 10px 0; padding-bottom: 10px; border-bottom: 1px solid #000; }" +
+            "h3 { font-size: 13px; margin: 15px 0 8px 0; border-bottom: 1px solid #000; padding-bottom: 3px; }" +
+            "table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }" +
+            "th, td { border: 1px solid #000 !important; padding: 4px 6px; font-size: 11px; }" +
+            "th { background: #f2f2f2 !important; color: #000 !important; text-align: center; }" +
+            ".btn-print { padding: 8px 20px; background: #000; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; }" +
+            ".ops-table { table-layout: fixed; width: 100%; } " +
+            ".ops-table td:nth-child(1) { width: 66%; text-align: left; } " +
+            ".ops-table td:nth-child(2) { width: 12%; text-align: center; } " +
+            ".ops-table td:nth-child(3) { width: 22%; text-align: right; } " +
+            "@media print { " +
+            "body { background: #fff !important; padding: 0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } " +
+            ".a4-sheet { width: 100% !important; border: none !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; } " +
+            ".no-print { display: none !important; } " +
+            "}" +
+            "</style>";
+        let hHead = "<html><head><title>Z-Отчёт</title>" + styleBlock + "</head><body>" +
+                "<div class=\"no-print\" style=\"text-align:center;margin-bottom:15px;\"><button class=\"btn-print\" onclick=\"window.print()\">🖨️ Распечатать Z-Отчёт</button></div>" +
+                "<div class=\"a4-sheet\">" +
+                "<h2>Z-Отчёт " + currentPoint + ". Дата закрытия: " + new Date().toLocaleDateString("ru-RU") + "</h2>";
+        let hSales = "<h3>1. Список продаж</h3><div style=\"display:flex;gap:30px;\"><div style=\"flex:1;\"><table class=\"ops-table\" style=\"width:100%;border-collapse:collapse;font-size:10px;\"><tbody>" + (salesLeftColumn || "<tr><td colspan=\"3\" style=\"text-align:center;\">-</td></tr>") + "</tbody></table></div><div style=\"flex:1;\"><table class=\"ops-table\" style=\"width:100%;border-collapse:collapse;font-size:10px;\"><tbody>" + (salesRightColumn || "<tr><td colspan=\"3\" style=\"text-align:center;\">-</td></tr>") + "</tbody></table></div></div>";       
+        let hStaff = "<div style=\"display:inline-block; min-width:340px;\">" +
+                    "<h3 style=\"margin:0 0 8px 0;\">3. Выплата из кассы</h3>" +
+                    "<table style=\"width:auto; min-width:340px;\"><thead><tr><th>Сотрудник</th><th>Режим</th><th>Выдано</th></tr></thead><tbody>" + staffRows + "</tbody></table>" +
+                    "</div>";
+        let textColor = isNegative ? "color:#da3637;" : "color:#238636;";
+        let hFoot = "<div style=\"font-size:11px; line-height:1.5;\">" +
             "<b>Итого продаж:</b> " + calc.totalSales.toLocaleString() + " тг.<br>" +
-            "&nbsp;&nbsp;&nbsp;&nbsp;• Из них Наличные: " + totalSalesCash.toLocaleString() + " тг.<br>" +
-            "&nbsp;&nbsp;&nbsp;&nbsp;• Из них Безналичные (карты): " + totalSalesCard.toLocaleString() + " тг.<br><br>" +
+            "&nbsp;&nbsp;• Из них Наличные: " + totalSalesCash.toLocaleString() + " тг.<br>" +
+            "&nbsp;&nbsp;• Из них Безналичные (карты): " + totalSalesCard.toLocaleString() + " тг.<br><br>" +
             "<b>Всего возвраты/расходы из кассы:</b> " + (totalExpCash + totalExpCard).toLocaleString() + " тг.<br>" +
-            "&nbsp;&nbsp;&nbsp;&nbsp;• Из них Наличными: " + totalExpCash.toLocaleString() + " тг.<br>" +
-            "&nbsp;&nbsp;&nbsp;&nbsp;• Из них Безналичными: " + totalExpCard.toLocaleString() + " тг.<br><br>" +
-            "<b>Премии к выдаче:</b> " + calc.totalBonus.toLocaleString() + " тг.<br>" +
+            "&nbsp;&nbsp;• Из них Наличными: " + totalExpCash.toLocaleString() + " тг.<br>" +
+            "&nbsp;&nbsp;• Из них Безналичными: " + totalExpCard.toLocaleString() + " тг.<br><br>" +
+            "<b>Премия к выдаче:</b> " + calc.totalBonus.toLocaleString() + " тг.<br>" +
             "<b>Премия к удержанию:</b> " + calc.bonusWithheld.toLocaleString() + " тг.<br>" +
-            "<b>Премии каждому сотруднику:</b> " + calc.perHeadBonus.toLocaleString() + " тг.<br><br>" +
-            "<b>Всего выдано зарплат наличными:</b> " + totalPayoutCash.toLocaleString() + " тг.<br>" +
-            "<b style=\"font-size:12px;text-decoration:underline;\">ОСТАТОК НАЛИЧНЫХ ДЛЯ ИНКАССАЦИИ: " + finalDrawerCash.toLocaleString() + " тг.</b>" +
-            "</p>";
-        let hBottom = "<div style=\"display:flex;gap:40px;margin-top:10px;\"><div style=\"flex:1;\">" + hFoot + "</div><div style=\"flex:1;\">" + hStaff + "</div></div></body></html>";
+            "<b>Премия каждому сотруднику:</b> " + calc.perHeadBonus.toLocaleString() + " тг.<br>" +
+            "<hr style=\"border:none; border-top:1px solid #ccc; margin:8px 0; width:280px;\">" +
+            "<b>Всего выдано зарплат наличными:</b> " + totalPayoutCash.toLocaleString() + " тг.<br><br>" +
+            "<b style=\"font-size:12px;" + textColor + "\">ОСТАТОК НАЛИЧНЫХ ДЛЯ ИНКАССАЦИИ: " + finalDrawerCash.toLocaleString() + " тг.</b>" +
+        "</div>";
+        let hExpenses = "<h3>2. Список возвратов и расходов</h3><div style=\"display:flex;gap:30px;\"><div style=\"flex:1;\"><table class=\"ops-table\" style=\"width:100%;border-collapse:collapse;font-size:10px;\"><tbody>" + (expensesLeftColumn || "<tr><td colspan=\"3\" style=\"text-align:center;\">-</td></tr>") + "</tbody></table></div><div style=\"flex:1;\"><table class=\"ops-table\" style=\"width:100%;border-collapse:collapse;font-size:10px;\"><tbody>" + (expensesRightColumn || "<tr><td colspan=\"3\" style=\"text-align:center;\">-</td></tr>") + "</tbody></table></div></div>";
+        let hBottom = "<div style=\"display:flex; justify-content:space-between; width:100%; margin-top:20px; align-items:flex-start;\"><div>" + hFoot + "</div><div>" + hStaff + "</div></div></div></body></html>";
         printWin.document.write(hHead + hSales + hExpenses + hBottom); printWin.document.close();
         let res = await runCloud("closeShift", { finalSalariesList: finalSalariesList, totalCashInDrawer: finalDrawerCash, totals: { totalBonus: calc.totalBonus, perEmpBonus: calc.perHeadBonus } });
         if (res) { localStorage.removeItem("Sales_saved_point"); modalCloseShift.style.display = "none"; mainTerminal.style.display = "none"; gatePointSelect.style.display = "flex"; history = []; activeEmployees = []; }
