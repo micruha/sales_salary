@@ -108,6 +108,38 @@
         .cloud-online { background-color: #2ecc71; box-shadow: 0 0 8px #2ecc71; }
         .cloud-offline { background-color: #e74c3c; box-shadow: 0 0 8px #e74c3c; }
         .cloud-text { font-size: 0.8rem; color: var(--muted); font-weight: normal; }
+        .gate-overlay {
+            position: fixed; inset: 0; background: rgba(13,17,23,0.85);
+            display: flex; align-items: center; justify-content: center;
+            z-index: 1000; backdrop-filter: blur(4px);
+        }
+        .gate-box {
+            background: var(--surf); border: 1px solid var(--border);
+            border-radius: 12px; padding: 30px; width: 100%; max-width: 420px;
+            text-align: center; box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+        }
+        .gate-box h2 { margin-top: 0; color: var(--primary); }
+        .gate-box p { font-size: 0.9rem; color: var(--text); margin: 8px 0 16px; }
+        .gate-box select, .gate-box input {
+            margin-bottom: 14px; background: #0d1117; border: 2px solid #444c56;
+            color: #fff; padding: 10px; border-radius: 8px; width: 100%; font-size: 1rem;
+        }
+        .gate-box button { width: 100%; padding: 12px; font-weight: bold; }
+        .gate-box .btn-blue { background: var(--primary); }
+        .gate-box .btn-blue:hover { background: var(--primary-hover); }
+        .gate-box .btn-gray { background: #21262d; border: 1px solid var(--border); margin-top: 10px; }
+        .gate-box .btn-gray:hover { background: #30363d; }
+        .gate-box .error-text { color: #f85149; font-size: 0.85rem; margin-top: 10px; display: none; }
+        .gate-box .lock-text { color: #f1c40f; font-size: 0.85rem; font-weight: bold; margin-top: 10px; }
+        .gate-box .attempt-text { font-size: 0.8rem; color: var(--muted); margin-top: 6px; }
+        .op-user { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+        .btn-delete-op {
+            background: transparent; border: 1px solid var(--border); color: var(--muted);
+            padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; margin-left: 8px;
+        }
+        .btn-delete-op:hover { background: #da3637; color: #fff; border-color: #da3637; }
+        .op-item.own-op { border-left-color: var(--primary); }
+        .hide-for-regular { display: none !important; }
         .gate-box { background: var(--surf); border: 1px solid var(--border); border-radius: 12px; padding: 30px; width: 100%; max-width: 550px; text-align: center; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
         .emp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; max-height: 300px; overflow-y: auto; padding-right: 5px; }
         .emp-card { background: #21262d; border: 1px solid var(--border); padding: 12px; border-radius: 6px; cursor: pointer; text-align: left; display: flex; flex-direction: column; gap: 6px; transition: all 0.2s; position: relative; }
@@ -292,27 +324,53 @@
         <div class="modal-btns"><button class="btn-sale" id="btn-close-shift-final">📠 Подтвердить, напечатать и отправить в архив</button><button class="btn-gray" id="btn-cancel-close-shift">Вернуться в кассу</button></div>
     </div>
 </div>
+<div class="gate-overlay" id="gate-login" style="display:none;">
+    <div class="gate-box">
+        <h2>👤 Вход пользователя</h2>
+        <p>Выберите своё имя:</p>
+        <select id="login-user-select"></select>
+        <p>Введите ваш пароль:</p>
+        <input type="password" id="login-pass-input" placeholder="Пароль">
+        <div class="attempt-text" id="login-attempt-info"></div>
+        <div class="lock-text" id="login-lock-timer" style="display:none;"></div>
+        <button class="btn-blue" id="btn-login" disabled>Войти в смену</button>
+        <button class="btn-gray" id="btn-logout" style="display:none;margin-top:10px;">Выйти</button>
+        <div class="error-text" id="login-error">Неверный пароль. Попробуйте снова.</div>
+    </div>
+</div>
 <script>
-    (async function() {
-        const PASSWORD_HASH = "647b2bb403b818ef801a32c1b3bc5390ae98a7aa56cf1fbb64dff7691641397b";    
-        if (sessionStorage.getItem("admin_passed") !== "true") {
-            let passInput = prompt("Вход заблокирован. Введите секретный пароль администратора:");
-            if (!passInput) return fail();
-            const msgBuffer = new TextEncoder().encode(passInput);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            const userHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-            if (userHash === PASSWORD_HASH) {
-                sessionStorage.setItem("admin_passed", "true");
-                if (typeof loadSalariesData === "function") loadSalariesData();
-            } else {
-                fail();
-            }
+    const GLOBAL_PASSWORD_HASH = "647b2bb403b818ef801a32c1b3bc5390ae98a7aa56cf1fbb64dff7691641397b";
+    let currentUser = null;
+    let shiftOwnerId = null;
+    async function sha256(str) {
+        const msgBuffer = new TextEncoder().encode(str);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+    }
+    async function checkGlobalPasswordPrompt() {
+        let passInput = prompt("Вход заблокирован. Введите секретный пароль администратора:");
+        if (!passInput) return false;
+        const hash = await sha256(passInput);
+        if (hash === GLOBAL_PASSWORD_HASH) {
+            sessionStorage.setItem("admin_passed", "true");
+            return true;
         }
-        function fail() {
-            alert("Доступ категорически запрещен!");
-            document.documentElement.innerHTML = "<html style='background:#141414;'><body style='font-family:sans-serif; color:#f44336; text-align:center; padding-top:100px;'><h1>🚫 Доступ ограничен</h1></body></html>";
-            throw new Error("Блокировка доступа.");
+        alert("Неверный пароль. Доступ запрещён.");
+        return false;
+    }
+    (async function initAuth() {
+        shiftOwnerId = localStorage.getItem("shift_owner_id") || null;
+        const savedUser = sessionStorage.getItem("current_user");
+        if (savedUser && sessionStorage.getItem("admin_passed") === "true") {
+            currentUser = JSON.parse(savedUser);
+        } else {
+            const passed = await checkGlobalPasswordPrompt();
+            if (!passed) {
+                document.documentElement.innerHTML = "<html style='background:#141414;'><body style='font-family:sans-serif; color:#f44336; text-align:center; padding-top:100px;'><h1>🚫 Доступ ограничен</h1></body></html>";
+                throw new Error("Блокировка доступа.");
+            }
+            showLoginScreen();
         }
     })();
     document.addEventListener('contextmenu', e => e.preventDefault());
@@ -326,20 +384,22 @@
     });
     const CONFIG_CLOUD_URL = "https://script.google.com/macros/s/AKfycbyktok79zqXQXI3_3fNIoHPNtCG5u3gPaMGZGVWYOQHivdr5lMr3YZOvRa2_cxyL7SH/exec";
     const masterEmployeeList = [
-        { id: "emp1", name: "Михаил Кренник", isEditable: false },
-        { id: "emp2", name: "Игорь Кочергин", isEditable: false },
-        { id: "emp3", name: "Татьяна Мецкер", isEditable: false },
-        { id: "emp4", name: "Вадим Ливит", isEditable: false },
-        { id: "emp5", name: "Ринат Бекметов", isEditable: false },
-        { id: "emp6", name: "Владимир Дмитриенко", isEditable: false },
-        { id: "emp7", name: "Анастасия Зеленская", isEditable: false },
-        { id: "emp8", name: "Марат Валитов", isEditable: false },
-        { id: "emp9", name: "Александр Алтухов", isEditable: false },
+        { id: "emp00", name: "Администратор", isEditable: false },
+        { id: "emp01", name: "Михаил Кренник", isEditable: false },
+        { id: "emp02", name: "Игорь Кочергин", isEditable: false },
+        { id: "emp03", name: "Татьяна Мецкер", isEditable: false },
+        { id: "emp04", name: "Вадим Ливит", isEditable: false },
+        { id: "emp05", name: "Ринат Бекметов", isEditable: false },
+        { id: "emp06", name: "Владимир Дмитриенко", isEditable: false },
+        { id: "emp07", name: "Анастасия Зеленская", isEditable: false },
+        { id: "emp08", name: "Марат Валитов", isEditable: false },
+        { id: "emp09", name: "Александр Алтухов", isEditable: false },
         { id: "emp10", name: "Григорий Ливит", isEditable: false },
-        { id: "emp10", name: "Никита Проскурин", isEditable: false },
-        { id: "temp1", name: "Сотрудник 1", isEditable: true },
-        { id: "temp2", name: "Сотрудник 2", isEditable: true },
-        { id: "temp3", name: "Сотрудник 3", isEditable: true }
+        { id: "emp11", name: "Никита Проскурин", isEditable: false },
+        { id: "emp12", name: "Алексей Проскурин", isEditable: false },
+        { id: "emp13", name: "Сотрудник 1", isEditable: true },
+        { id: "emp14", name: "Сотрудник 2", isEditable: true },
+        { id: "emp15", name: "Сотрудник 3", isEditable: true }
     ];
     let currentPoint = "Техносити"; let activeEmployees = []; let history = []; let baseSalaryGlobal = 10000;
     const cloudIndicator = document.getElementById("cloud-indicator"), cloudStatusText = document.getElementById("cloud-status-text");
@@ -375,7 +435,7 @@
     }
     function checkShiftTimeBlock() {
         let hours = new Date().getHours();
-        if (hours < 0 || hours >= 19) { alert("Ошибка доступа! Смену можно открыть только с 07:00 до 19:00."); return false; }
+        if (hours < 0 || hours >= 23) { alert("Ошибка доступа! Смену можно открыть только с 07:00 до 19:00."); return false; }
         return true;
     }
     function calculateTotals() {
@@ -420,6 +480,7 @@ function renderOpenEmpPool() {
         let card = document.createElement("div"); 
         card.className = "emp-card"; 
         card.dataset.id = emp.id;
+        let isCurrentUser = currentUser && emp.id === currentUser.id;
         let nameContent = emp.isEditable 
             ? "<input type=\"text\" class=\"edit-name-input\" value=\"" + emp.name + "\" onclick=\"event.stopPropagation()\" onchange=\"updateTempName('" + emp.id + "', this.value)\">" 
             : "<span class=\"emp-name-text\">" + emp.name + "</span>";
@@ -435,7 +496,7 @@ function renderOpenEmpPool() {
             card.style.justifyContent = "center"; 
         }
         card.innerHTML = "<div class=\"emp-name\">" + nameContent + "</div>" + toggleHTML;
-        card.addEventListener("click", () => { card.classList.toggle("active"); }); 
+        if(isCurrentUser){card.classList.add("active");card.style.pointerEvents="none";card.style.opacity="0.85";card.style.borderColor="#2ecc71";}else{card.addEventListener("click", () => { card.classList.toggle("active"); });} 
         openEmpPool.appendChild(card);
     });
 }
@@ -457,12 +518,15 @@ function renderOperations() {
     }
     history.forEach(op => {
         let item = document.createElement("div"); 
-        item.className = "op-item type-" + op.type;
+        item.className = "op-item type-" + op.type + (op.userId === currentUser?.id ? " own-op" : "");
         let details = op.cash > 0 ? "Наличные: " + op.cash.toLocaleString() + " тг." : ""; 
         if (op.card > 0) details += (details ? " | " : "") + "Безнал: " + op.card.toLocaleString() + " тг.";
         let bonusText = "<span style=\"color:var(--warn);font-size:0.75rem;\">Мотивация: " + op.bonus + "%</span>";
         let timeShort = (op.time || "").match(/\d{2}:\d{2}/)?.[0] || "--:--";
-        item.innerHTML = "<div class=\"op-info\"><span style=\"font-weight:bold;\">" + op.title + "</span><span class=\"op-meta\">" + timeShort + " | " + details + "</span>" + bonusText + "</div><div class=\"op-right\"><span>" + (op.type === "sale" ? "+" : "-") + ((op.cash || 0) + (op.card || 0)).toLocaleString() + " тг.</span><button class=\"btn-delete\" onclick=\"deleteOp('" + op.id + "', event)\">❌</button></div>";
+        let userNameHtml = op.userName ? "<div class=\"op-user\">" + op.userName + "</div>" : "";
+        let isOwn = op.userId === currentUser?.id;
+        let delBtn = isOwn ? "<button class=\"btn-delete-op\" onclick=\"deleteOp('" + op.id + "', event)\">Удалить</button>" : "";
+        item.innerHTML = "<div class=\"op-info\"><span style=\"font-weight:bold;\">" + op.title + "</span>" + userNameHtml + "<span class=\"op-meta\">" + timeShort + " | " + details + "</span>" + bonusText + "</div><div class=\"op-right\"><span>" + (op.type === "sale" ? "+" : "-") + ((op.cash || 0) + (op.card || 0)).toLocaleString() + " тг.</span>" + delBtn + "</div>";
         operationsContainer.appendChild(item);
     });
 }
@@ -495,6 +559,9 @@ function renderOperations() {
     btnBackToPoints.addEventListener("click", () => { gateShiftOpen.style.display = "none"; gatePointSelect.style.display = "flex"; });
     btnOpenShiftConfirm.addEventListener("click", async () => {
         if (!checkShiftTimeBlock()) return;
+        if (!currentUser) return alert("Сначала войдите в систему под своим именем.");
+        shiftOwnerId = currentUser.id;
+        localStorage.setItem("shift_owner_id", currentUser.id);
         let selectedCards = openEmpPool.querySelectorAll(".emp-card.active");
         if (selectedCards.length === 0) {
             alert("⚠️ Внимание! Нельзя открыть смену без сотрудников.\nПожалуйста, кликните по именам работающих сегодня людей, чтобы они подсветились зелёным.");
@@ -544,7 +611,9 @@ function renderOperations() {
             cash, 
             card, 
             bonus: Number(opBonusPct.value), 
-            type 
+            type,
+            userId: currentUser ? currentUser.id : null,
+            userName: currentUser ? currentUser.name : "—"
         };
         opTitle.disabled = opCash.disabled = opCard.disabled = true;
         history.push(opData); 
@@ -557,8 +626,18 @@ function renderOperations() {
         opCard.value = "0";
     }
     btnDoSale.addEventListener("click", () => addOperation("sale")); btnDoReturn.addEventListener("click", () => addOperation("return"));
-    window.deleteOp = async function(id, event) { if (event) event.stopPropagation(); if (confirm("Удалить операцию?")) { history = history.filter(op => op.id !== id); renderOperations(); calculateTotals(); await runCloud("deleteOperation", { id: id }); } };
+    window.deleteOp = async function(id, event) {
+        if (event) event.stopPropagation();
+        const op = history.find(o => o.id === id);
+        if (op && op.userId && op.userId !== currentUser?.id) {
+            return alert("Вы можете удалять только свои собственные операции!");
+        }
+        if (confirm("Удалить операцию?")) { history = history.filter(op => op.id !== id); renderOperations(); calculateTotals(); await runCloud("deleteOperation", { id: id }); }
+    };
     btnTriggerCloseShift.addEventListener("click", () => {
+        if (!currentUser || shiftOwnerId !== currentUser.id) {
+            return alert("Закрывать смену и печатать отчёт может только тот, кто её открыл.");
+        }
         let calc = calculateTotals(); salaryTableBody.innerHTML = "";
         activeEmployees.forEach((emp, index) => {
             let bonusAmount = emp.isOnlyBase ? 0 : calc.perHeadBonus;
@@ -668,8 +747,170 @@ function renderOperations() {
         let hBottom = "<div style=\"display:flex; justify-content:space-between; width:100%; margin-top:20px; align-items:flex-start;\"><div>" + hFoot + "</div><div>" + hStaff + "</div></div></div></body></html>";
         printWin.document.write(hHead + hSales + hExpenses + hBottom); printWin.document.close();
         let res = await runCloud("closeShift", { finalSalariesList: finalSalariesList, totalCashInDrawer: finalDrawerCash, totals: { totalBonus: calc.totalBonus, perEmpBonus: calc.perHeadBonus } });
-        if (res) { localStorage.removeItem("Sales_saved_point"); modalCloseShift.style.display = "none"; mainTerminal.style.display = "none"; gatePointSelect.style.display = "flex"; history = []; activeEmployees = []; }
+        localStorage.removeItem("Sales_saved_point");
+        localStorage.removeItem("shift_owner_id");
+        shiftOwnerId = null;
+        modalCloseShift.style.display = "none";
+        mainTerminal.style.display = "none";
+        gatePointSelect.style.display = "flex";
+        history = [];
+        activeEmployees = [];
     });
+    const users = [
+        { id: "emp00", name: "Администратор", passwordHash: "d9773bc180a39dd0334a4c1dfd01d59e1603e74b9b88ccd79149ffec702a396d", isEditable: false },
+        { id: "emp01", name: "Михаил Кренник", passwordHash: "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4", isEditable: false },
+        { id: "emp02", name: "Игорь Кочергин", passwordHash: "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4", isEditable: false },
+        { id: "emp03", name: "Татьяна Мецкер", passwordHash: "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4", isEditable: false },
+        { id: "emp04", name: "Вадим Ливит", passwordHash: "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4", isEditable: false },
+        { id: "emp05", name: "Ринат Бекметов", passwordHash: "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4", isEditable: false },
+        { id: "emp06", name: "Владимир Дмитриенко", passwordHash: "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4", isEditable: false },
+        { id: "emp07", name: "Анастасия Зеленская", passwordHash: "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4", isEditable: false },
+        { id: "emp08", name: "Марат Валитов", passwordHash: "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4", isEditable: false },
+        { id: "emp09", name: "Александр Алтухов", passwordHash: "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4", isEditable: false },
+        { id: "emp10", name: "Григорий Ливит", passwordHash: "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4", isEditable: false },
+        { id: "emp11", name: "Никита Проскурин", passwordHash: "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4", isEditable: false },
+        { id: "emp12", name: "Алексей Проскурин", passwordHash: "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4", isEditable: false },
+        { id: "emp13", name: "Сотрудник 1", passwordHash: "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4", isEditable: true },
+        { id: "emp14", name: "Сотрудник 2", passwordHash: "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4", isEditable: true },
+        { id: "emp15", name: "Сотрудник 3", passwordHash: "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4", isEditable: true }
+    ];
+    function getLockState(userId) {
+        const lockUntil = Number(localStorage.getItem(`lockUntil_${userId}`) || 0);
+        const failCount = Number(localStorage.getItem(`failCount_${userId}`) || 0);
+        return { lockUntil, failCount };
+    }
+    function setLockState(userId, failCount, lockUntil) {
+        localStorage.setItem(`failCount_${userId}`, failCount);
+        if (lockUntil) localStorage.setItem(`lockUntil_${userId}`, lockUntil);
+        else localStorage.removeItem(`lockUntil_${userId}`);
+    }
+    function updateLoginUI() {
+        if (!currentUser) return;
+        const { lockUntil, failCount } = getLockState(currentUser.id);
+        const now = Date.now();
+        if (lockUntil > now) {
+            const minutes = Math.ceil((lockUntil - now) / 60000);
+            loginLockTimer.textContent = `Ввод заблокирован на ${minutes} мин. Попробуйте позже.`;
+            loginLockTimer.style.display = "block";
+            btnLogin.disabled = true;
+            loginPassInput.disabled = true;
+            loginAttemptInfo.textContent = "";
+        } else {
+            loginLockTimer.style.display = "none";
+            btnLogin.disabled = false;
+            loginPassInput.disabled = false;
+            loginAttemptInfo.textContent = failCount > 0 ? `Осталось попыток: ${3 - failCount}` : "";
+        }
+    }
+    function fillUserSelect() {
+        loginUserSelect.innerHTML = "";
+        users.forEach(u => {
+            const opt = document.createElement("option");
+            opt.value = u.id;
+            opt.textContent = u.name;
+            loginUserSelect.appendChild(opt);
+        });
+    }
+    function showLoginScreen() {
+        gateLogin.style.display = "flex";
+        fillUserSelect();
+        loginPassInput.value = "";
+        loginError.style.display = "none";
+        updateLoginUI();
+        loginPassInput.focus();
+    }
+    function onUserLoggedIn(user) {
+        currentUser = user;
+        sessionStorage.setItem("current_user", JSON.stringify({ id: user.id, name: user.name }));
+        gateLogin.style.display = "none";
+        btnLogout.style.display = "inline-block";
+        btnLogout.textContent = `Выйти (${user.name})`;
+        const storedOwner = localStorage.getItem("shift_owner_id");
+        if (typeof btnTriggerCloseShift !== "undefined" && storedOwner && storedOwner !== user.id) {
+            btnTriggerCloseShift.style.display = "none";
+        }
+        const savedPoint = localStorage.getItem("Sales_saved_point");
+        if (savedPoint) {
+            currentPoint = savedPoint;
+            if (typeof selectedPoint !== "undefined") selectedPoint.value = savedPoint;
+            if (typeof enterToCurrentPoint === "function") enterToCurrentPoint().catch(() => {});
+        } else if (typeof gateShiftOpen !== "undefined") {
+            gateShiftOpen.style.display = "flex";
+        }
+    }
+    function logout() {
+        currentUser = null;
+        shiftOwnerId = null;
+        sessionStorage.removeItem("current_user");
+        gateLogin.style.display = "flex";
+        if (typeof gateShiftOpen !== "undefined") gateShiftOpen.style.display = "none";
+        if (typeof mainTerminal !== "undefined") mainTerminal.style.display = "none";
+        fillUserSelect();
+        loginPassInput.value = "";
+        loginError.style.display = "none";
+        btnLogout.style.display = "none";
+        updateLoginUI();
+    }
+    async function attemptUserLogin() {
+        const userId = loginUserSelect.value;
+        const user = users.find(u => u.id === userId);
+        if (!user) return;
+        const { lockUntil, failCount } = getLockState(userId);
+        const now = Date.now();
+        if (lockUntil > now) {
+            const minutes = Math.ceil((lockUntil - now) / 60000);
+            loginLockTimer.textContent = `Ввод заблокирован на ${minutes} мин. Попробуйте позже.`;
+            loginLockTimer.style.display = "block";
+            return;
+        }
+        const pass = loginPassInput.value;
+        if (!pass) { loginError.style.display = "block"; return; }
+        const hash = await sha256(pass);
+        console.log("[AUTH DEBUG]", "userId:", userId, "enteredHash:", hash, "expectedHash:", user.passwordHash, "match:", hash === user.passwordHash);
+        if (hash === user.passwordHash) {
+            localStorage.removeItem(`failCount_${userId}`);
+            localStorage.removeItem(`lockUntil_${userId}`);
+            loginError.style.display = "none";
+            onUserLoggedIn(user);
+        } else {
+            const newCount = failCount + 1;
+            if (newCount >= 3) {
+                const lockUntil = now + 60 * 60 * 1000;
+                setLockState(userId, 0, lockUntil);
+                loginLockTimer.textContent = "Превышено число попыток. Ввод заблокирован на 1 час.";
+                loginLockTimer.style.display = "block";
+                btnLogin.disabled = true;
+                loginPassInput.disabled = true;
+            } else {
+                setLockState(userId, newCount, 0);
+                let msg = `Неверный пароль. Осталось попыток: ${3 - newCount}`;
+                if (newCount === 2) msg += " Последняя попытка перед блокировкой на 1 час.";
+                loginAttemptInfo.textContent = msg;
+            }
+            loginError.style.display = "block";
+            loginPassInput.value = "";
+        }
+    }
+    const gateLogin = document.getElementById("gate-login");
+    const loginUserSelect = document.getElementById("login-user-select");
+    const loginPassInput = document.getElementById("login-pass-input");
+    const btnLogin = document.getElementById("btn-login");
+    const btnLogout = document.getElementById("btn-logout");
+    const loginError = document.getElementById("login-error");
+    const loginAttemptInfo = document.getElementById("login-attempt-info");
+    const loginLockTimer = document.getElementById("login-lock-timer");
+    btnLogin.addEventListener("click", attemptUserLogin);
+    loginPassInput.addEventListener("keydown", e => { if (e.key === "Enter") attemptUserLogin(); });
+    btnLogout.addEventListener("click", logout);
+    loginUserSelect.addEventListener("change", () => {
+        loginPassInput.value = "";
+        loginError.style.display = "none";
+        updateLoginUI();
+    });
+    if (currentUser) {
+        const user = users.find(u => u.id === currentUser.id);
+        if (user) onUserLoggedIn(user);
+    }
     async function checkInitialConnection() {
         if (!CONFIG_CLOUD_URL || CONFIG_CLOUD_URL.includes("СЮДА_ВСТАВЬТЕ")) { 
             setCloudStatus(false, "Ошибка: ссылка не прописана!"); 
