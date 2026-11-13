@@ -108,6 +108,8 @@
         .cloud-online { background-color: #2ecc71; box-shadow: 0 0 8px #2ecc71; }
         .cloud-offline { background-color: #e74c3c; box-shadow: 0 0 8px #e74c3c; }
         .cloud-text { font-size: 0.8rem; color: var(--muted); font-weight: normal; }
+
+        /* --- Экраны входа --- */
         .gate-overlay {
             position: fixed; inset: 0; background: rgba(13,17,23,0.85);
             display: flex; align-items: center; justify-content: center;
@@ -132,6 +134,8 @@
         .gate-box .error-text { color: #f85149; font-size: 0.85rem; margin-top: 10px; display: none; }
         .gate-box .lock-text { color: #f1c40f; font-size: 0.85rem; font-weight: bold; margin-top: 10px; }
         .gate-box .attempt-text { font-size: 0.8rem; color: var(--muted); margin-top: 6px; }
+
+        /* --- Имя пользователя в операции --- */
         .op-user { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
         .btn-delete-op {
             background: transparent; border: 1px solid var(--border); color: var(--muted);
@@ -196,7 +200,7 @@
     </style>
 </head>
 <body>
-<div class="gate-box" id="gate-point-select" style="display: localStorage.getItem('Sales_saved_point') ? 'none' : 'flex';">
+<div class="gate-box" id="gate-point-select" style="display: none;">
     <div class="sync-headline">
         <h2 style="border:none; padding:0;">Выбор торговой точки</h2>
         <span class="cloud-dot cloud-offline" id="cloud-indicator"></span>
@@ -239,7 +243,7 @@
     <button class="btn-sale" id="btn-open-shift-confirm" style="margin-top:5px;">▶ Открыть смену для выбранного состава</button>
     <button class="btn-gray" id="btn-back-to-points">← Назад к выбору торговой точки</button>
 </div>
-<div class="workspace" id="main-terminal" style="display: localStorage.getItem('Sales_saved_point') ? 'grid' : 'none';">
+<div class="workspace" id="main-terminal" style="display: none;">
     <div class="column">
         <h2>
             <span>Панель ввода и отчёты</span>
@@ -250,8 +254,8 @@
             <input type="text" id="op-title" placeholder="Например: ПДУ, Зарядка, Пакеты">
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <div class="form-group"><label>Наличные (тг.):</label><input type="number" id="op-cash" value="0" step="100"></div>
-            <div class="form-group"><label>Безналичные (тг.):</label><input type="number" id="op-card" value="0" step="100"></div>
+            <div class="form-group"><label>Наличные (тг.):</label><input type="number" id="op-cash" value="0" step="100" max="999999"></div>
+            <div class="form-group"><label>Безналичные (тг.):</label><input type="number" id="op-card" value="0" step="100" max="999999"></div>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 5px;">
             <div class="form-group">
@@ -324,6 +328,8 @@
         <div class="modal-btns"><button class="btn-sale" id="btn-close-shift-final">📠 Подтвердить, напечатать и отправить в архив</button><button class="btn-gray" id="btn-cancel-close-shift">Вернуться в кассу</button></div>
     </div>
 </div>
+
+<!-- Экран входа пользователя (второй рубеж) -->
 <div class="gate-overlay" id="gate-login" style="display:none;">
     <div class="gate-box">
         <h2>👤 Вход пользователя</h2>
@@ -338,16 +344,22 @@
         <div class="error-text" id="login-error">Неверный пароль. Попробуйте снова.</div>
     </div>
 </div>
+
 <script>
+    /* ================================================================
+       АВТОРИЗАЦИЯ И ПРАВА ДОСТУПА (часть 1: базовые переменные)
+       ================================================================ */
     const GLOBAL_PASSWORD_HASH = "647b2bb403b818ef801a32c1b3bc5390ae98a7aa56cf1fbb64dff7691641397b";
     let currentUser = null;
     let shiftOwnerId = null;
+
     async function sha256(str) {
         const msgBuffer = new TextEncoder().encode(str);
         const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
         const hashArray = Array.from(new Uint8Array(hashBuffer));
         return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
     }
+
     async function checkGlobalPasswordPrompt() {
         let passInput = prompt("Вход заблокирован. Введите секретный пароль администратора:");
         if (!passInput) return false;
@@ -359,6 +371,7 @@
         alert("Неверный пароль. Доступ запрещён.");
         return false;
     }
+
     (async function initAuth() {
         shiftOwnerId = localStorage.getItem("shift_owner_id") || null;
         const savedUser = sessionStorage.getItem("current_user");
@@ -435,7 +448,7 @@
     }
     function checkShiftTimeBlock() {
         let hours = new Date().getHours();
-        if (hours < 0 || hours >= 23) { alert("Ошибка доступа! Смену можно открыть только с 07:00 до 19:00."); return false; }
+        if (hours < 7 || hours >= 19) { alert("Ошибка доступа! Смену можно открыть только с 07:00 до 19:00."); return false; }
         return true;
     }
     function calculateTotals() {
@@ -603,7 +616,10 @@ function renderOperations() {
     };
     async function addOperation(type) {
         let title = opTitle.value.trim(), cash = Number(opCash.value) || 0, card = Number(opCard.value) || 0;
-        if (!title || (cash <= 0 && card <= 0)) return alert("Введите наименование и сумму!");  
+        if (!title || (cash <= 0 && card <= 0)) return alert("Введите наименование и сумму!");
+        if (cash >= 1000000 || card >= 1000000) {
+            return alert("Сумма по наличным или безналичным не может быть 1 000 000 тенге и более.\nМаксимально допустимая сумма — 999 999 тг.");
+        }
         let opData = { 
             id: "op_" + Date.now() + Math.random().toString(36).substr(2,4), 
             time: new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }), 
@@ -770,20 +786,23 @@ function renderOperations() {
         { id: "emp10", name: "Григорий Ливит", passwordHash: "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4", isEditable: false },
         { id: "emp11", name: "Никита Проскурин", passwordHash: "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4", isEditable: false },
         { id: "emp12", name: "Алексей Проскурин", passwordHash: "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4", isEditable: false },
-        { id: "emp13", name: "Сотрудник 1", passwordHash: "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4", isEditable: true },
-        { id: "emp14", name: "Сотрудник 2", passwordHash: "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4", isEditable: true },
-        { id: "emp15", name: "Сотрудник 3", passwordHash: "03ac674216f3e15c761ee1a5e255f067953623c8b388b4459e13f978d7c846f4", isEditable: true }
+        { id: "emp13", name: "Сотрудник 1", passwordHash: "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3", isEditable: true },
+        { id: "emp14", name: "Сотрудник 2", passwordHash: "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3", isEditable: true },
+        { id: "emp15", name: "Сотрудник 3", passwordHash: "a665a45920422f9d417e4867efdc4fb8a04a1f3fff1fa07e998e86f7f7a27ae3", isEditable: true }
     ];
+
     function getLockState(userId) {
         const lockUntil = Number(localStorage.getItem(`lockUntil_${userId}`) || 0);
         const failCount = Number(localStorage.getItem(`failCount_${userId}`) || 0);
         return { lockUntil, failCount };
     }
+
     function setLockState(userId, failCount, lockUntil) {
         localStorage.setItem(`failCount_${userId}`, failCount);
         if (lockUntil) localStorage.setItem(`lockUntil_${userId}`, lockUntil);
         else localStorage.removeItem(`lockUntil_${userId}`);
     }
+
     function updateLoginUI() {
         if (!currentUser) return;
         const { lockUntil, failCount } = getLockState(currentUser.id);
@@ -802,6 +821,7 @@ function renderOperations() {
             loginAttemptInfo.textContent = failCount > 0 ? `Осталось попыток: ${3 - failCount}` : "";
         }
     }
+
     function fillUserSelect() {
         loginUserSelect.innerHTML = "";
         users.forEach(u => {
@@ -811,6 +831,7 @@ function renderOperations() {
             loginUserSelect.appendChild(opt);
         });
     }
+
     function showLoginScreen() {
         gateLogin.style.display = "flex";
         fillUserSelect();
@@ -819,25 +840,32 @@ function renderOperations() {
         updateLoginUI();
         loginPassInput.focus();
     }
+
     function onUserLoggedIn(user) {
         currentUser = user;
         sessionStorage.setItem("current_user", JSON.stringify({ id: user.id, name: user.name }));
         gateLogin.style.display = "none";
         btnLogout.style.display = "inline-block";
         btnLogout.textContent = `Выйти (${user.name})`;
+        // Только владелец сессии может закрывать смену
         const storedOwner = localStorage.getItem("shift_owner_id");
         if (typeof btnTriggerCloseShift !== "undefined" && storedOwner && storedOwner !== user.id) {
             btnTriggerCloseShift.style.display = "none";
         }
         const savedPoint = localStorage.getItem("Sales_saved_point");
+        if (typeof gatePointSelect !== "undefined") gatePointSelect.style.display = "none";
+        if (typeof gateShiftOpen !== "undefined") gateShiftOpen.style.display = "none";
+        if (typeof mainTerminal !== "undefined") mainTerminal.style.display = "none";
         if (savedPoint) {
             currentPoint = savedPoint;
             if (typeof selectedPoint !== "undefined") selectedPoint.value = savedPoint;
             if (typeof enterToCurrentPoint === "function") enterToCurrentPoint().catch(() => {});
         } else if (typeof gateShiftOpen !== "undefined") {
             gateShiftOpen.style.display = "flex";
+            if (typeof renderOpenEmpPool === "function") renderOpenEmpPool();
         }
     }
+
     function logout() {
         currentUser = null;
         shiftOwnerId = null;
@@ -851,6 +879,7 @@ function renderOperations() {
         btnLogout.style.display = "none";
         updateLoginUI();
     }
+
     async function attemptUserLogin() {
         const userId = loginUserSelect.value;
         const user = users.find(u => u.id === userId);
@@ -891,7 +920,9 @@ function renderOperations() {
             loginPassInput.value = "";
         }
     }
+
     const gateLogin = document.getElementById("gate-login");
+
     const loginUserSelect = document.getElementById("login-user-select");
     const loginPassInput = document.getElementById("login-pass-input");
     const btnLogin = document.getElementById("btn-login");
@@ -899,6 +930,7 @@ function renderOperations() {
     const loginError = document.getElementById("login-error");
     const loginAttemptInfo = document.getElementById("login-attempt-info");
     const loginLockTimer = document.getElementById("login-lock-timer");
+
     btnLogin.addEventListener("click", attemptUserLogin);
     loginPassInput.addEventListener("keydown", e => { if (e.key === "Enter") attemptUserLogin(); });
     btnLogout.addEventListener("click", logout);
@@ -907,10 +939,12 @@ function renderOperations() {
         loginError.style.display = "none";
         updateLoginUI();
     });
+
     if (currentUser) {
         const user = users.find(u => u.id === currentUser.id);
         if (user) onUserLoggedIn(user);
     }
+
     async function checkInitialConnection() {
         if (!CONFIG_CLOUD_URL || CONFIG_CLOUD_URL.includes("СЮДА_ВСТАВЬТЕ")) { 
             setCloudStatus(false, "Ошибка: ссылка не прописана!"); 
