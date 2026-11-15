@@ -113,7 +113,7 @@ function logout() {
 }
 
 async function checkGlobalPasswordPrompt() {
-    let passInput = prompt("Вход заблокирован. Введите секретный пароль администратора:");
+    let passInput = prompt("Введите код доступа:");
     if (!passInput) return false;
     const hash = await sha256(passInput);
     if (hash === GLOBAL_PASSWORD_HASH) {
