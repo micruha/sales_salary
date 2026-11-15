@@ -1,170 +1,13 @@
-<!DOCTYPE html>
+﻿<!DOCTYPE html>
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Продажи и Зарплата</title>
-    <style>
-        :root {
-            --bg: #0d1117; --surf: #161b22; --border: #30363d; --primary: #00adb5;
-            --primary-hover: #008c9e; --text: #c9d1d9; --muted: #8b949e;
-            --success: #238636; --success-hover: #2ea043; --danger: #da3637; --danger-hover: #f85149;
-            --warn: #f1c40f; --tag-sale: rgba(46, 204, 113, 0.15); --tag-sale-border: #2ecc71;
-            --tag-return: rgba(231, 76, 60, 0.15); --tag-return-border: #e74c3c;
-        }
-        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
-        body { 
-            background-color: var(--bg); 
-            color: var(--text); 
-            padding: 20px; 
-            display: flex; 
-            flex-direction: column; 
-            align-items: center; 
-            justify-content: center; 
-            min-height: 90vh; 
-        }
-        .a4-doc {
-            max-width: 827px;
-            margin: 0 auto;
-            padding: 20px;
-            background: #fff;
-            color: #000;
-            border: 2px solid #333;
-            box-shadow: 0 0 20px rgba(0,0,0,0.1);
-            overflow: hidden;
-        }
-        @page {
-            size: A4;
-            margin: 15mm 10mm 20mm 10mm;
-            @bottom-center {
-                content: "Page " counter(page);
-                font-size: 9px;
-                color: #666;
-            }
-        }
-        @media print {
-            body {
-                background: #ffffff !important;
-                color: #000000 !important;
-                padding: 0 !important;
-                margin: 0 !important;
-                display: block !important;
-                -webkit-print-color-adjust: exact;
-                print-color-adjust: exact;
-            }
-            body * { visibility: hidden; }
-            #modal-close-shift, #modal-close-shift * { visibility: visible; }
-            #modal-close-shift {
-                position: absolute;
-                left: 0;
-                top: 0;
-                width: 100%;
-                background: #ffffff !important;
-                color: #000000 !important;
-                font-family: sans-serif;
-                font-size: 11px;
-            }
-            #modal-close-shift h2, 
-            #modal-close-shift h3, 
-            #modal-close-shift p, 
-            #modal-close-shift td, 
-            #modal-close-shift th { 
-                color: #000000 !important; 
-            }
-            #modal-close-shift table { 
-                width: 100%; 
-                border-collapse: collapse; 
-                margin-top: 5px; 
-                margin-bottom: 10px; 
-            }
-            #modal-close-shift th, 
-            #modal-close-shift td { 
-                border: 1px solid #000000 !important; 
-                padding: 4px 6px; 
-                text-align: left; 
-                font-size: 10px; 
-            }
-            #modal-close-shift th { 
-                background: #f2f2f2 !important; 
-            }
-            #modal-close-shift h2 { 
-                text-align: center; 
-                font-size: 16px; 
-                margin: 10px 0; 
-                page-break-after: avoid;
-            }
-            #modal-close-shift h3 { 
-                font-size: 13px; 
-                margin: 15px 0 5px 0; 
-                border-bottom: 1px solid #000000; 
-                padding-bottom: 2px; 
-                page-break-after: avoid;
-            }
-            .no-break { page-break-inside: avoid; }
-            .modal-btns, .print-fixed, .btn-delete, .btn-p { display: none !important; }
-        }
-        .sync-headline { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 5px; }
-        .cloud-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; transition: background 0.3s; }
-        .cloud-online { background-color: #2ecc71; box-shadow: 0 0 8px #2ecc71; }
-        .cloud-offline { background-color: #e74c3c; box-shadow: 0 0 8px #e74c3c; }
-        .cloud-text { font-size: 0.8rem; color: var(--muted); font-weight: normal; }
-        .gate-box { background: var(--surf); border: 1px solid var(--border); border-radius: 12px; padding: 30px; width: 100%; max-width: 550px; text-align: center; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
-        .emp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; max-height: 300px; overflow-y: auto; padding-right: 5px; }
-        .emp-card { background: #21262d; border: 1px solid var(--border); padding: 12px; border-radius: 6px; cursor: pointer; text-align: left; display: flex; flex-direction: column; gap: 6px; transition: all 0.2s; position: relative; }
-        .emp-card:hover { border-color: var(--primary); }
-        .emp-card.active { border-color: #2ecc71; background: rgba(35, 134, 54, 0.15); }
-        .emp-card .emp-name { font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; justify-content: space-between; gap: 5px; }
-        .emp-card input.edit-name-input { background: var(--bg); border: 1px solid var(--border); color: #fff; font-size: 0.85rem; padding: 2px 5px; border-radius: 4px; width: 100%; }
-        .emp-card .mode-toggle { font-size: 0.75rem; color: var(--muted); margin-top: 4px; display: flex; align-items: center; gap: 5px; cursor: pointer; }
-        .emp-card .mode-toggle input { width: auto; cursor: pointer; }
-        .workspace { display: grid; grid-template-columns: 1.14fr 1fr; gap: 20px; width: 100%; max-width: 1400px; display: none; margin-top: 10px; }
-        .column { background: var(--surf); border: 1px solid var(--border); padding: 20px; border-radius: 12px; display: flex; flex-direction: column; gap: 15px; height: fit-content; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
-        h2 { font-size: 1.15rem; font-weight: 600; padding-bottom: 10px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
-        .shift-badge { font-size: 0.8rem; background: #21262d; padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border); color: var(--primary); font-weight: bold; }
-        .form-group { display: flex; flex-direction: column; gap: 5px; text-align: left; }
-        .form-group label { font-size: 0.9rem; font-weight: bold; color: var(--primary); letter-spacing: 0.5px; }
-        input, select { background: #0d1117; border: 2px solid #444c56; color: #fff; padding: 12px; border-radius: 8px; font-size: 1.05rem; font-weight: 500; outline: none; width: 100%; transition: all 0.2s; }
-        input:focus, select:focus { border-color: var(--primary); background: #1c2128; box-shadow: 0 0 10px rgba(0, 173, 181, 0.25); }
-        input::placeholder { color: #57606a; }
-        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px; }
-        button { padding: 12px; font-size: 0.95rem; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; color: #fff; transition: background 0.2s; }
-        .btn-sale { background: var(--success); width: 100%; }
-        .btn-sale:hover { background: var(--success-hover); }
-        .btn-return { background: var(--danger); width: 100%; }
-        .btn-return:hover { background: var(--danger-hover); }
-        .btn-blue { background: var(--primary); }
-        .btn-blue:hover { background: var(--primary-hover); }
-        .btn-gray { background: #21262d; border: 1px solid var(--border); color: var(--text); }
-        .btn-gray:hover { background: #30363d; }
-        .op-right { display: flex; align-items: center; gap: 12px; font-weight: bold; font-size: 0.9rem; }
-        .op-right span:first-child { font-weight: bold; }
-        .live-emp-list { display: flex; flex-direction: column; gap: 6px; background: var(--bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border); max-height: 180px; overflow-y: auto; }
-        .live-emp-item { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; padding: 6px 0; border-bottom: 1px dashed #222; }
-        .live-emp-item .emp-status-text { font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
-        .live-emp-item .status-lbl-base { background: rgba(88,166,255,0.15); color: var(--primary); }
-        .live-emp-item .status-lbl-both { background: rgba(46,204,113,0.15); color: #2ecc71; }
-        .op-list { max-height: 500px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-        .op-item { background: var(--bg); border: 1px solid var(--border); padding: 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid transparent; cursor: pointer; }
-        .op-item.type-sale { border-left-color: #2ecc71; background: var(--tag-sale); }
-        .op-item.type-return { border-left-color: #e74c3c; background: var(--tag-return); }
-        .op-info { display: flex; flex-direction: column; gap: 4px; text-align: left; font-size: 0.85rem; }
-        .op-meta { font-size: 0.75rem; color: var(--muted); }
-        .salary-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.85rem; }
-        .salary-table th, .salary-table td { padding: 8px; border: 1px solid var(--border); text-align: left; }
-        .salary-table th { background: #21262d; color: var(--primary); }
-        .salary-table input { padding: 4px 6px; font-size: 0.85rem; text-align: center; background: var(--bg); border: 1px solid var(--border); color: #fff; border-radius: 4px; width: 85px; }
-        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; }
-        .modal-box { background: var(--surf); padding: 25px; border-radius: 12px; border: 1px solid var(--border); width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 15px; }
-        .modal-btns { display: flex; gap: 10px; margin-top: 5px; }
-        .salary-box { background: var(--bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 12px; }
-        .info-line { font-size: 0.9rem; padding: 4px 0; display: flex; justify-content: space-between; border-bottom: 1px dashed #2a2a2a; }
-        ::-webkit-scrollbar { width: 4px; }
-        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-        @media (max-width: 900px) { .workspace { grid-template-columns: 1fr; } .form-row { grid-template-columns: 1fr; } }
-    </style>
+    <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<div class="gate-box" id="gate-point-select" style="display: localStorage.getItem('Sales_saved_point') ? 'none' : 'flex';">
+<div class="gate-box" id="gate-point-select" style="display: none;">
     <div class="sync-headline">
         <h2 style="border:none; padding:0;">Выбор торговой точки</h2>
         <span class="cloud-dot cloud-offline" id="cloud-indicator"></span>
@@ -207,19 +50,20 @@
     <button class="btn-sale" id="btn-open-shift-confirm" style="margin-top:5px;">▶ Открыть смену для выбранного состава</button>
     <button class="btn-gray" id="btn-back-to-points">← Назад к выбору торговой точки</button>
 </div>
-<div class="workspace" id="main-terminal" style="display: localStorage.getItem('Sales_saved_point') ? 'grid' : 'none';">
+<div class="workspace" id="main-terminal" style="display: none;">
     <div class="column">
         <h2>
             <span>Панель ввода и отчёты</span>
             <span class="shift-badge" id="terminal-point-badge">Точка</span>
+            <div class="session-badges" id="session-badges"></div>
         </h2>
         <div class="form-group" style="margin-top: 5px;">
             <label>Наименование товара / расхода:</label>
             <input type="text" id="op-title" placeholder="Например: ПДУ, Зарядка, Пакеты">
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
-            <div class="form-group"><label>Наличные (тг.):</label><input type="number" id="op-cash" value="0" step="100"></div>
-            <div class="form-group"><label>Безналичные (тг.):</label><input type="number" id="op-card" value="0" step="100"></div>
+            <div class="form-group"><label>Наличные (тг.):</label><input type="number" id="op-cash" value="0" step="100" max="999999"></div>
+            <div class="form-group"><label>Безналичные (тг.):</label><input type="number" id="op-card" value="0" step="100" max="999999"></div>
         </div>
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 5px;">
             <div class="form-group">
@@ -268,9 +112,6 @@
     <div class="column">
         <h2>Журнал продаж и расходов за сегодня</h2>
         <div class="op-list" id="operations-container">
-        </div>
-    </div>
-</div>
 <div class="modal-overlay" id="modal-add-emp">
     <div class="modal-box">
         <h2 style="border:none; padding:0; color:var(--primary);">Включение сотрудника в смену</h2>
@@ -292,407 +133,33 @@
         <div class="modal-btns"><button class="btn-sale" id="btn-close-shift-final">📠 Подтвердить, напечатать и отправить в архив</button><button class="btn-gray" id="btn-cancel-close-shift">Вернуться в кассу</button></div>
     </div>
 </div>
+
+<!-- Экран входа пользователя (второй рубеж) -->
+<div class="gate-overlay" id="gate-login" style="display:none;">
+    <div class="gate-box">
+        <h2>👤 Вход пользователя</h2>
+        <p>Выберите своё имя:</p>
+        <select id="login-user-select"></select>
+        <p>Введите ваш пароль:</p>
+        <input type="password" id="login-pass-input" placeholder="Пароль">
+        <div class="attempt-text" id="login-attempt-info"></div>
+        <div class="lock-text" id="login-lock-timer" style="display:none;"></div>
+        <button class="btn-blue" id="btn-login" disabled>Войти в смену</button>
+        <button class="btn-gray" id="btn-logout" style="display:none;margin-top:10px;">Выйти</button>
+        <div class="error-text" id="login-error">Неверный пароль. Попробуйте снова.</div>
+    </div>
+</div>
+
+<script src="js/main.js"></script>
+<script src="js/auth.js"></script>
+<script src="js/operations.js"></script>
+<script src="js/salaries.js"></script>
+<script src="js/ui.js"></script>
 <script>
-    (async function() {
-        const PASSWORD_HASH = "7619ee8cea49187f309616e30ecf54be072259b43760f1f550a644945d5572f2";    
-        if (sessionStorage.getItem("admin_passed") !== "true") {
-            let passInput = prompt("Введите пароль доступа:");
-            if (!passInput) return fail();
-            const msgBuffer = new TextEncoder().encode(passInput);
-            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-            const hashArray = Array.from(new Uint8Array(hashBuffer));
-            const userHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-            if (userHash === PASSWORD_HASH) {
-                sessionStorage.setItem("admin_passed", "true");
-                if (typeof loadSalariesData === "function") loadSalariesData();
-            } else {
-                fail();
-            }
-        }
-        function fail() {
-            alert("Доступ временно закрыт. Ведутся технические работы.");
-            document.documentElement.innerHTML = "<html style='background:#141414;'><body style='font-family:sans-serif; color:#f44336; text-align:center; padding-top:100px;'><h1>🚫 Доступ временно закрыт. Ведутся технические работы.</h1></body></html>";
-            throw new Error("Блокировка доступа.");
-        }
-    })();
-    document.addEventListener('contextmenu', e => e.preventDefault());
-    document.addEventListener('keydown', e => {
-        if (e.key === 'F12' || 
-            (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'c' || e.key === 'C')) || 
-            (e.ctrlKey && (e.key === 'u' || e.key === 'U'))) {
-            e.preventDefault();
-            return false;
-        }
+    document.addEventListener("DOMContentLoaded", () => {
+        initAuth();
+        setupAuthListeners();
     });
-    const CONFIG_CLOUD_URL = "https://script.google.com/macros/s/AKfycbyktok79zqXQXI3_3fNIoHPNtCG5u3gPaMGZGVWYOQHivdr5lMr3YZOvRa2_cxyL7SH/exec";
-    const masterEmployeeList = [
-        { id: "emp1", name: "Михаил Кренник", isEditable: false },
-        { id: "emp2", name: "Игорь Кочергин", isEditable: false },
-        { id: "emp3", name: "Татьяна Мецкер", isEditable: false },
-        { id: "emp4", name: "Вадим Ливит", isEditable: false },
-        { id: "emp5", name: "Ринат Бекметов", isEditable: false },
-        { id: "emp6", name: "Владимир Дмитриенко", isEditable: false },
-        { id: "emp7", name: "Анастасия Зеленская", isEditable: false },
-        { id: "emp8", name: "Марат Валитов", isEditable: false },
-        { id: "emp9", name: "Александр Алтухов", isEditable: false },
-        { id: "emp10", name: "Григорий Ливит", isEditable: false },
-        { id: "emp10", name: "Никита Проскурин", isEditable: false },
-        { id: "temp1", name: "Сотрудник 1", isEditable: true },
-        { id: "temp2", name: "Сотрудник 2", isEditable: true },
-        { id: "temp3", name: "Сотрудник 3", isEditable: true }
-    ];
-    let currentPoint = "Техносити"; let activeEmployees = []; let history = []; let baseSalaryGlobal = 10000;
-    const cloudIndicator = document.getElementById("cloud-indicator"), cloudStatusText = document.getElementById("cloud-status-text");
-    const gatePointSelect = document.getElementById("gate-point-select"), selectedPoint = document.getElementById("selected-point"), btnCheckPoint = document.getElementById("btn-check-point");
-    const gateShiftOpen = document.getElementById("gate-shift-open"), gatePointDisplay = document.getElementById("gate-point-display"), openEmpPool = document.getElementById("open-emp-pool"), baseSalaryInput = document.getElementById("base-salary-input"), btnOpenShiftConfirm = document.getElementById("btn-open-shift-confirm"), btnBackToPoints = document.getElementById("btn-back-to-points");
-    const mainTerminal = document.getElementById("main-terminal"), terminalPointBadge = document.getElementById("terminal-point-badge"), liveEmpContainer = document.getElementById("live-emp-container"), btnTriggerAddEmp = document.getElementById("btn-trigger-add-emp");
-    const opTitle = document.getElementById("op-title"), opCash = document.getElementById("op-cash"), opCard = document.getElementById("op-card"), opBonusPct = document.getElementById("op-bonus-pct"), btnDoSale = document.getElementById("btn-do-sale"), btnDoReturn = document.getElementById("btn-do-return"), operationsContainer = document.getElementById("operations-container");
-    const totalSales = document.getElementById("total-Sales"), totalCash = document.getElementById("total-cash"), totalCard = document.getElementById("total-card"), totalBonusPool = document.getElementById("total-bonus-pool"), bonusPerHead = document.getElementById("bonus-per-head"), btnTriggerCloseShift = document.getElementById("btn-trigger-close-shift"), statTotal = document.getElementById("stat-total"), statCash = document.getElementById("stat-cash"), statCard = document.getElementById("stat-card"), statBonusWithheld = document.getElementById("stat-bonus-withheld"), statSalaryPerHead = document.getElementById("stat-salary-per-head"), statSalaryTotalSum = document.getElementById("stat-salary-total-sum"), statIncassationCash = document.getElementById("stat-incassation-cash");
-    const modalAddEmp = document.getElementById("modal-add-emp"), modalAddEmpSelect = document.getElementById("modal-add-emp-select"), modalAddEmpSalary = document.getElementById("modal-add-emp-salary"), modalAddEmpMode = document.getElementById("modal-add-emp-mode"), btnConfirmAddEmp = document.getElementById("btn-confirm-add-emp"), btnCancelAddEmp = document.getElementById("btn-cancel-add-emp");
-    const modalCloseShift = document.getElementById("modal-close-shift"), salaryTableBody = document.getElementById("salary-table-body"), modalCashDrawer = document.getElementById("modal-cash-drawer"), btnCloseShiftFinal = document.getElementById("btn-close-shift-final"), btnCancelCloseShift = document.getElementById("btn-cancel-close-shift");
-    function setCloudStatus(isOnline, text) {
-        if(isOnline) { cloudIndicator.className = "cloud-dot cloud-online"; cloudStatusText.textContent = text || "Облако онлайн. Соединение стабильно."; cloudStatusText.style.color = "#2ecc71"; } 
-        else { cloudIndicator.className = "cloud-dot cloud-offline"; cloudStatusText.textContent = text || "Облако оффлайн. Нет связи с базой данных."; cloudStatusText.style.color = "#e74c3c"; }
-    }
-    async function runCloud(action, payload = {}) {
-        if (!CONFIG_CLOUD_URL || CONFIG_CLOUD_URL.includes("СЮДА_ВСТАВЬТЕ")) {
-            setCloudStatus(false, "Ошибка: ссылка не прописана!"); return null;
-        }
-        try {
-            payload.point = currentPoint; payload.action = action;
-            let res = await fetch(CONFIG_CLOUD_URL, {
-                method: "POST",
-                headers: { "Content-Type": "text/plain" },
-                body: JSON.stringify(payload)
-            });
-            setCloudStatus(true);
-            if (action === "get") {
-                let textData = await res.text();
-                return JSON.parse(textData);
-            }
-            return { status: "success" };
-        } catch (err) { setCloudStatus(false); return null; }
-    }
-    function checkShiftTimeBlock() {
-        let hours = new Date().getHours();
-        if (hours < 0 || hours >= 19) { alert("Ошибка доступа! Смену можно открыть только с 07:00 до 19:00."); return false; }
-        return true;
-    }
-    function calculateTotals() {
-        let tSales = 0, tCash = 0, tCard = 0, sTotal = 0, sCash = 0, sCard = 0, tBonus = 0, tBonusWithheld = 0;
-        history.forEach(op => {
-            let cash = Number(op.cash) || 0, card = Number(op.card) || 0, bonusPct = Number(op.bonus) || 0;
-            if (op.type === "sale") { 
-                tSales += (cash + card); tCash += cash; tCard += card;
-                tBonus += Math.round((cash + card) * (bonusPct / 100)); 
-            } else if (op.type === "return") { 
-                sTotal += (cash + card); sCash += cash; sCard += card;
-                tBonusWithheld += Math.round((cash + card) * (bonusPct / 100));
-            }
-        });
-        let bonusSharersCount = activeEmployees.filter(e => !e.isOnlyBase).length;
-        let netBonus = tBonus - tBonusWithheld;
-        let perHeadBonus = bonusSharersCount > 0 ? Math.round(netBonus / bonusSharersCount) : 0;
-        totalSales.textContent = tSales.toLocaleString() + " тг."; totalCash.textContent = tCash.toLocaleString() + " тг."; totalCard.textContent = tCard.toLocaleString() + " тг."; totalBonusPool.textContent = tBonus.toLocaleString() + " тг.";
-        statTotal.textContent = sTotal.toLocaleString() + " тг."; statCash.textContent = sCash.toLocaleString() + " тг."; statCard.textContent = sCard.toLocaleString() + " тг.";
-        statBonusWithheld.textContent = tBonusWithheld.toLocaleString() + " тг.";
-        bonusPerHead.textContent = perHeadBonus.toLocaleString() + " тг. (" + bonusSharersCount + " чел.)";
-        let salaries = activeEmployees.map(emp => emp.baseSalary + (emp.isOnlyBase ? 0 : perHeadBonus));
-        let allEqual = salaries.length > 0 && salaries.every(s => s === salaries[0]);
-        if (allEqual) {
-            statSalaryPerHead.textContent = salaries[0].toLocaleString() + " тг.";
-        } else {
-            statSalaryPerHead.textContent = "См. ведомость выплат";
-        }
-        let totalStaffPayout = 0;
-        activeEmployees.forEach(emp => { totalStaffPayout += (emp.baseSalary + (emp.isOnlyBase ? 0 : perHeadBonus)); });
-        statSalaryTotalSum.textContent = totalStaffPayout.toLocaleString() + " тг.";
-        let incassationCash = tCash - totalStaffPayout;
-        let incassationColor = incassationCash < 0 ? "#da3637" : "var(--success)";
-        statIncassationCash.textContent = incassationCash.toLocaleString() + " тг.";
-        statIncassationCash.style.color = incassationColor;
-        return { totalSales: tSales, totalCash: tCash, totalCard: tCard, totalBonus: tBonus, perHeadBonus: perHeadBonus, bonusWithheld: tBonusWithheld };
-    }
-function renderOpenEmpPool() {
-    openEmpPool.innerHTML = "";
-    let noBaseOnly = ["Михаил Кренник", "Игорь Кочергин", "Татьяна Мецкер", "Вадим Ливит", "Ринат Бекметов", "Владимир Дмитриенко", "Анастасия Зеленская", "Марат Валитов", "Никита Проскурин", "Алексей Проскурин", "Администратор"];
-    masterEmployeeList.forEach(emp => {
-        let card = document.createElement("div"); 
-        card.className = "emp-card"; 
-        card.dataset.id = emp.id;
-        let nameContent = emp.isEditable 
-            ? "<input type=\"text\" class=\"edit-name-input\" value=\"" + emp.name + "\" onclick=\"event.stopPropagation()\" onchange=\"updateTempName('" + emp.id + "', this.value)\">" 
-            : "<span class=\"emp-name-text\">" + emp.name + "</span>";
-        let toggleHTML = ""; 
-        card.style.display = "flex";
-        card.style.flexDirection = "column";
-        card.style.alignItems = "center";
-        card.style.textAlign = "center";
-        if (!noBaseOnly.includes(emp.name)) {
-            toggleHTML = "<div class=\"mode-toggle\" onclick=\"event.stopPropagation()\"><label><input type=\"checkbox\" class=\"mode-chk\"> Только ставка</label></div>";
-            card.style.justifyContent = "flex-start"; 
-        } else {
-            card.style.justifyContent = "center"; 
-        }
-        card.innerHTML = "<div class=\"emp-name\">" + nameContent + "</div>" + toggleHTML;
-        card.addEventListener("click", () => { card.classList.toggle("active"); }); 
-        openEmpPool.appendChild(card);
-    });
-}
-    window.updateTempName = function(id, newVal) { let emp = masterEmployeeList.find(e => e.id === id); if (emp && newVal.trim()) emp.name = newVal.trim(); };
-    function renderLiveEmployees() {
-        liveEmpContainer.innerHTML = "";
-        activeEmployees.forEach(emp => {
-            let item = document.createElement("div"); item.className = "live-emp-item";
-            let lbl = emp.isOnlyBase ? "<span class=\"emp-status-text status-lbl-base\">Только ставка</span>" : "<span class=\"emp-status-text status-lbl-both\">Ставка + %</span>";
-            item.innerHTML = "<span><b>" + emp.name + "</b></span><div style=\"display:flex;align-items:center;gap:10px;\">" + lbl + "<button class=\"btn-delete\" onclick=\"removeEmpFromShift('" + emp.id + "')\" style=\"font-size:0.8rem;padding:2px 6px;background:var(--danger);color:#fff;\">❌ Убрать</button></div>";
-            liveEmpContainer.appendChild(item);
-        });
-    }
-function renderOperations() {
-    operationsContainer.innerHTML = ""; 
-    if (!history.length) { 
-        operationsContainer.innerHTML = "<div style=\"text-align:center;color:var(--muted);padding:20px;\">Операций за сегодня нет</div>"; 
-        return; 
-    }
-    history.forEach(op => {
-        let item = document.createElement("div"); 
-        item.className = "op-item type-" + op.type;
-        let details = op.cash > 0 ? "Наличные: " + op.cash.toLocaleString() + " тг." : ""; 
-        if (op.card > 0) details += (details ? " | " : "") + "Безнал: " + op.card.toLocaleString() + " тг.";
-        let bonusText = "<span style=\"color:var(--warn);font-size:0.75rem;\">Мотивация: " + op.bonus + "%</span>";
-        let timeShort = (op.time || "").match(/\d{2}:\d{2}/)?.[0] || "--:--";
-        item.innerHTML = "<div class=\"op-info\"><span style=\"font-weight:bold;\">" + op.title + "</span><span class=\"op-meta\">" + timeShort + " | " + details + "</span>" + bonusText + "</div><div class=\"op-right\"><span>" + (op.type === "sale" ? "+" : "-") + ((op.cash || 0) + (op.card || 0)).toLocaleString() + " тг.</span><button class=\"btn-delete\" onclick=\"deleteOp('" + op.id + "', event)\">❌</button></div>";
-        operationsContainer.appendChild(item);
-    });
-}
-    async function enterToCurrentPoint() {
-        let data = await runCloud("get");
-        if (!data) return alert("Ошибка связи с таблицей Google");
-        gatePointSelect.style.display = "none";
-        if (data.isOpen) {
-            activeEmployees = data.info.employees || [];
-            history = data.operations || [];
-            baseSalaryGlobal = 10000;
-            terminalPointBadge.textContent = currentPoint;
-            mainTerminal.style.display = "grid";
-            gateShiftOpen.style.display = "none";
-            renderLiveEmployees();
-            renderOperations();
-            calculateTotals();
-        } else {
-            gatePointDisplay.textContent = "Торговая точка: " + currentPoint;
-            gateShiftOpen.style.display = "flex";
-            mainTerminal.style.display = "none";
-            renderOpenEmpPool();
-        }
-    }
-    btnCheckPoint.addEventListener("click", async () => {
-        localStorage.setItem("Sales_saved_point", selectedPoint.value);
-        currentPoint = selectedPoint.value;
-        await enterToCurrentPoint();
-    });
-    btnBackToPoints.addEventListener("click", () => { gateShiftOpen.style.display = "none"; gatePointSelect.style.display = "flex"; });
-    btnOpenShiftConfirm.addEventListener("click", async () => {
-        if (!checkShiftTimeBlock()) return;
-        let selectedCards = openEmpPool.querySelectorAll(".emp-card.active");
-        if (selectedCards.length === 0) {
-            alert("⚠️ Внимание! Нельзя открыть смену без сотрудников.\nПожалуйста, кликните по именам работающих сегодня людей, чтобы они подсветились зелёным.");
-            return; 
-        }
-        baseSalaryGlobal = Number(baseSalaryInput.value) || 10000; activeEmployees = [];
-        selectedCards.forEach(card => {
-            let id = card.dataset.id;
-            let empBase = masterEmployeeList.find(e => e.id === id);
-            let chk = card.querySelector(".mode-chk");
-            let isOnlyBase = chk ? chk.checked : false;
-            activeEmployees.push({ id: id, name: empBase.name, isOnlyBase: isOnlyBase, baseSalary: baseSalaryGlobal });
-        }); 
-        await runCloud("openShift", { employees: activeEmployees });
-        gateShiftOpen.style.display = "none"; 
-        terminalPointBadge.textContent = currentPoint; 
-        mainTerminal.style.display = "grid"; 
-        history = []; 
-        renderLiveEmployees(); 
-        renderOperations(); 
-        calculateTotals();
-    });
-    btnTriggerAddEmp.addEventListener("click", () => {
-        modalAddEmpSelect.innerHTML = ""; let workingIds = activeEmployees.map(e => e.id), bench = masterEmployeeList.filter(e => !workingIds.includes(e.id));
-        if (!bench.length) return alert("Все сотрудники уже на смене!");
-        bench.forEach(emp => { let opt = document.createElement("option"); opt.value = emp.id; opt.textContent = emp.name; modalAddEmpSelect.appendChild(opt); });
-        modalAddEmpMode.checked = false; modalAddEmp.style.display = "flex";
-    });
-    btnCancelAddEmp.addEventListener("click", () => { modalAddEmp.style.display = "none"; });
-    btnConfirmAddEmp.addEventListener("click", async () => {
-        let id = modalAddEmpSelect.value, empBase = masterEmployeeList.find(e => e.id === id);
-        let empSalary = Number(modalAddEmpSalary.value) || baseSalaryGlobal;
-        activeEmployees.push({ id: id, name: empBase.name, isOnlyBase: modalAddEmpMode.checked, baseSalary: empSalary });
-        modalAddEmp.style.display = "none"; renderLiveEmployees(); calculateTotals(); await runCloud("updateEmployees", { employees: activeEmployees });
-    });
-    window.removeEmpFromShift = async function(id) {
-        if (activeEmployees.length <= 1) return alert("На смене должен оставаться хотя бы один сотрудник!");
-        if (confirm("Убрать сотрудника со смены?")) { activeEmployees = activeEmployees.filter(e => e.id !== id); renderLiveEmployees(); calculateTotals(); await runCloud("updateEmployees", { employees: activeEmployees }); }
-    };
-    async function addOperation(type) {
-        let title = opTitle.value.trim(), cash = Number(opCash.value) || 0, card = Number(opCard.value) || 0;
-        if (!title || (cash <= 0 && card <= 0)) return alert("Введите наименование и сумму!");  
-        let opData = { 
-            id: "op_" + Date.now() + Math.random().toString(36).substr(2,4), 
-            time: new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }), 
-            title, 
-            cash, 
-            card, 
-            bonus: Number(opBonusPct.value), 
-            type 
-        };
-        opTitle.disabled = opCash.disabled = opCard.disabled = true;
-        history.push(opData); 
-        renderOperations(); 
-        calculateTotals();
-        await runCloud("addOperation", opData);
-        opTitle.disabled = opCash.disabled = opCard.disabled = false;
-        opTitle.value = ""; 
-        opCash.value = "0"; 
-        opCard.value = "0";
-    }
-    btnDoSale.addEventListener("click", () => addOperation("sale")); btnDoReturn.addEventListener("click", () => addOperation("return"));
-    window.deleteOp = async function(id, event) { if (event) event.stopPropagation(); if (confirm("Удалить операцию?")) { history = history.filter(op => op.id !== id); renderOperations(); calculateTotals(); await runCloud("deleteOperation", { id: id }); } };
-    btnTriggerCloseShift.addEventListener("click", () => {
-        let calc = calculateTotals(); salaryTableBody.innerHTML = "";
-        activeEmployees.forEach((emp, index) => {
-            let bonusAmount = emp.isOnlyBase ? 0 : calc.perHeadBonus;
-            let exactPay = emp.baseSalary + bonusAmount;
-            let totalPayRounded = Math.round(exactPay / 100) * 100;
-            let row = document.createElement("tr");
-            row.innerHTML = "<td><b>" + emp.name + "</b></td><td><span class=\"emp-status-text " + (emp.isOnlyBase ? "status-lbl-base" : "status-lbl-both") + "\">" + (emp.isOnlyBase ? "Только ставка" : "Ставка + %") + "</span></td><td><input type=\"number\" class=\"edit-base-salary\" data-index=\"" + index + "\" value=\"" + emp.baseSalary + "\" step=\"500\"></td><td><input type=\"number\" class=\"edit-bonus-salary\" data-index=\"" + index + "\" value=\"" + bonusAmount + "\" step=\"500\" " + (emp.isOnlyBase ? "disabled style=\"opacity:0.3;\"" : "") + "></td><td><b class=\"row-total\">" + totalPayRounded + "</b> тг.</td>";
-            salaryTableBody.appendChild(row);
-        });
-        let totalStaffPayout = 0;
-        activeEmployees.forEach(emp => { totalStaffPayout += (emp.baseSalary + (emp.isOnlyBase ? 0 : calc.perHeadBonus)); });
-        let cashDrawerLeft = calc.totalCash - totalStaffPayout;
-        modalCashDrawer.textContent = (cashDrawerLeft < 0 ? 0 : cashDrawerLeft).toLocaleString() + " тг.";  
-        salaryTableBody.querySelectorAll("input").forEach(input => {
-            input.addEventListener("input", () => {
-                let rows = salaryTableBody.querySelectorAll("tr"), newStaffTotal = 0;
-                rows.forEach(r => { 
-                    let b = Number(r.querySelector(".edit-base-salary").value) || 0, bn = Number(r.querySelector(".edit-bonus-salary").value) || 0; 
-                    let rTotal = Math.round((b + bn) / 100) * 100;
-                    r.querySelector(".row-total").textContent = rTotal; newStaffTotal += (b + bn);
-                });
-                let currentLeft = calc.totalCash - newStaffTotal;
-                modalCashDrawer.textContent = (currentLeft < 0 ? 0 : currentLeft).toLocaleString() + " тг.";
-            });
-        });
-        modalCloseShift.style.display = "flex";
-    });
-    btnCancelCloseShift.addEventListener("click", () => { modalCloseShift.style.display = "none"; });
-    btnCloseShiftFinal.addEventListener("click", async () => {
-        if (!confirm("Окончательно закрыть смену?")) return;
-        let calc = calculateTotals(), finalSalariesList = [], rows = salaryTableBody.querySelectorAll("tr"), totalPayoutCash = 0;
-        activeEmployees.forEach((emp, index) => {
-            let b = Number(rows[index].querySelector(".edit-base-salary").value) || 0, bn = Number(rows[index].querySelector(".edit-bonus-salary").value) || 0;
-            let finalRounded = Math.round((b + bn) / 100) * 100;
-            totalPayoutCash += finalRounded;
-            finalSalariesList.push({ name: emp.name, isOnlyBase: emp.isOnlyBase, baseSalary: b, calculatedBonus: bn, finalTotal: finalRounded });
-        });
-        let salesLeftColumn = "", salesRightColumn = "", expensesLeftColumn = "", expensesRightColumn = "", staffRows = "", idx = 0, expIdx = 0;
-        let allSales = history.filter(op => op.type === "sale");
-        let totalSalesCash = 0, totalSalesCard = 0, totalExpCash = 0, totalExpCard = 0;
-        allSales.forEach(op => {
-            let c = Number(op.cash || 0), cd = Number(op.card || 0);
-            totalSalesCash += c; totalSalesCard += cd;
-            let rowHtml = "<tr><td style=\"padding:2px 0;\">" + op.title + "</td><td style=\"padding:2px 0;text-align:center;\">" + (op.bonus || 0) + "%</td><td style=\"padding:2px 0;\">" + (c + cd).toLocaleString() + " тг.</td></tr>";
-            if (idx % 2 === 0) salesLeftColumn += rowHtml; else salesRightColumn += rowHtml;
-            idx++;
-        });
-        history.filter(op => op.type === "return").forEach(op => {
-            let c = Number(op.cash || 0), cd = Number(op.card || 0);
-            totalExpCash += c; totalExpCard += cd;
-            let rowHtml = "<tr><td style=\"padding:2px 0;\">" + op.title + "</td><td style=\"padding:2px 0;text-align:center;\">" + (op.bonus || 0) + "%</td><td style=\"padding:2px 0;\">" + (c + cd).toLocaleString() + " тг.</td></tr>";
-            if (expIdx % 2 === 0) expensesLeftColumn += rowHtml; else expensesRightColumn += rowHtml;
-            expIdx++;
-        });
-        finalSalariesList.forEach(emp => {
-            staffRows += "<tr><td><b>" + emp.name + "</b></td><td>" + (emp.isOnlyBase ? "Ставка" : "Ставка + %") + "</td><td><b>" + emp.finalTotal.toLocaleString() + " тг.</b></td></tr>";
-        });
-        let finalDrawerCash = totalSalesCash - totalExpCash - totalPayoutCash; 
-        let isNegative = finalDrawerCash < 0;
-        let textDecoration = isNegative ? "color:#da3637;" : "color:green;";
-        let printWin = window.open("", "_blank");
-        let styleBlock = "<style>" +
-            "@page { size: A4 landscape; margin: 10mm; @bottom-center { content: \"Page \" counter(page); font-size: 9px; color: #666; } }" +
-            "body { font-family: sans-serif; color: #000; background: #e9ecef; margin: 0; padding: 20px; }" +
-            ".a4-sheet { width: 1050px; margin: 0 auto; background: #fff; border: 2px solid #333; padding: 25px 30px; box-shadow: 0 4px 15px rgba(0,0,0,0.1); }" +
-            "h2 { text-align: center; font-size: 16px; margin: 0 0 10px 0; padding-bottom: 10px; border-bottom: 1px solid #000; }" +
-            "h3 { font-size: 13px; margin: 15px 0 8px 0; border-bottom: 1px solid #000; padding-bottom: 3px; }" +
-            "table { width: 100%; border-collapse: collapse; margin-bottom: 10px; }" +
-            "th, td { border: 1px solid #000 !important; padding: 4px 6px; font-size: 11px; }" +
-            "th { background: #f2f2f2 !important; color: #000 !important; text-align: center; }" +
-            ".btn-print { padding: 8px 20px; background: #000; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-weight: bold; font-size: 12px; }" +
-            ".ops-table { table-layout: fixed; width: 100%; } " +
-            ".ops-table td:nth-child(1) { width: 66%; text-align: left; } " +
-            ".ops-table td:nth-child(2) { width: 12%; text-align: center; } " +
-            ".ops-table td:nth-child(3) { width: 22%; text-align: right; } " +
-            "@media print { " +
-            "body { background: #fff !important; padding: 0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; } " +
-            ".a4-sheet { width: 100% !important; border: none !important; box-shadow: none !important; padding: 0 !important; margin: 0 !important; } " +
-            ".no-print { display: none !important; } " +
-            "}" +
-            "</style>";
-        let hHead = "<html><head><title>Z-Отчёт</title>" + styleBlock + "</head><body>" +
-                "<div class=\"no-print\" style=\"text-align:center;margin-bottom:15px;\"><button class=\"btn-print\" onclick=\"window.print()\">🖨️ Распечатать Z-Отчёт</button></div>" +
-                "<div class=\"a4-sheet\">" +
-                "<h2>Z-Отчёт " + currentPoint + ". Дата закрытия: " + new Date().toLocaleDateString("ru-RU") + "</h2>";
-        let hSales = "<h3>1. Список продаж</h3><div style=\"display:flex;gap:30px;\"><div style=\"flex:1;\"><table class=\"ops-table\" style=\"width:100%;border-collapse:collapse;font-size:10px;\"><tbody>" + (salesLeftColumn || "<tr><td colspan=\"3\" style=\"text-align:center;\">-</td></tr>") + "</tbody></table></div><div style=\"flex:1;\"><table class=\"ops-table\" style=\"width:100%;border-collapse:collapse;font-size:10px;\"><tbody>" + (salesRightColumn || "<tr><td colspan=\"3\" style=\"text-align:center;\">-</td></tr>") + "</tbody></table></div></div>";       
-        let hStaff = "<div style=\"display:inline-block; min-width:340px;\">" +
-                    "<h3 style=\"margin:0 0 8px 0;\">3. Выплата из кассы</h3>" +
-                    "<table style=\"width:auto; min-width:340px;\"><thead><tr><th>Сотрудник</th><th>Режим</th><th>Выдано</th></tr></thead><tbody>" + staffRows + "</tbody></table>" +
-                    "</div>";
-        let textColor = isNegative ? "color:#da3637;" : "color:#238636;";
-        let hFoot = "<div style=\"font-size:11px; line-height:1.5;\">" +
-            "<b>Итого продаж:</b> " + calc.totalSales.toLocaleString() + " тг.<br>" +
-            "&nbsp;&nbsp;• Из них Наличные: " + totalSalesCash.toLocaleString() + " тг.<br>" +
-            "&nbsp;&nbsp;• Из них Безналичные (карты): " + totalSalesCard.toLocaleString() + " тг.<br><br>" +
-            "<b>Всего возвраты/расходы из кассы:</b> " + (totalExpCash + totalExpCard).toLocaleString() + " тг.<br>" +
-            "&nbsp;&nbsp;• Из них Наличными: " + totalExpCash.toLocaleString() + " тг.<br>" +
-            "&nbsp;&nbsp;• Из них Безналичными: " + totalExpCard.toLocaleString() + " тг.<br><br>" +
-            "<b>Премия к выдаче:</b> " + calc.totalBonus.toLocaleString() + " тг.<br>" +
-            "<b>Премия к удержанию:</b> " + calc.bonusWithheld.toLocaleString() + " тг.<br>" +
-            "<b>Премия каждому сотруднику:</b> " + calc.perHeadBonus.toLocaleString() + " тг.<br>" +
-            "<hr style=\"border:none; border-top:1px solid #ccc; margin:8px 0; width:280px;\">" +
-            "<b>Всего выдано зарплат наличными:</b> " + totalPayoutCash.toLocaleString() + " тг.<br><br>" +
-            "<b style=\"font-size:12px;" + textColor + "\">ОСТАТОК НАЛИЧНЫХ ДЛЯ ИНКАССАЦИИ: " + finalDrawerCash.toLocaleString() + " тг.</b>" +
-        "</div>";
-        let hExpenses = "<h3>2. Список возвратов и расходов</h3><div style=\"display:flex;gap:30px;\"><div style=\"flex:1;\"><table class=\"ops-table\" style=\"width:100%;border-collapse:collapse;font-size:10px;\"><tbody>" + (expensesLeftColumn || "<tr><td colspan=\"3\" style=\"text-align:center;\">-</td></tr>") + "</tbody></table></div><div style=\"flex:1;\"><table class=\"ops-table\" style=\"width:100%;border-collapse:collapse;font-size:10px;\"><tbody>" + (expensesRightColumn || "<tr><td colspan=\"3\" style=\"text-align:center;\">-</td></tr>") + "</tbody></table></div></div>";
-        let hBottom = "<div style=\"display:flex; justify-content:space-between; width:100%; margin-top:20px; align-items:flex-start;\"><div>" + hFoot + "</div><div>" + hStaff + "</div></div></div></body></html>";
-        printWin.document.write(hHead + hSales + hExpenses + hBottom); printWin.document.close();
-        let res = await runCloud("closeShift", { finalSalariesList: finalSalariesList, totalCashInDrawer: finalDrawerCash, totals: { totalBonus: calc.totalBonus, perEmpBonus: calc.perHeadBonus } });
-        if (res) { localStorage.removeItem("Sales_saved_point"); modalCloseShift.style.display = "none"; mainTerminal.style.display = "none"; gatePointSelect.style.display = "flex"; history = []; activeEmployees = []; }
-    });
-    async function checkInitialConnection() {
-        if (!CONFIG_CLOUD_URL || CONFIG_CLOUD_URL.includes("СЮДА_ВСТАВЬТЕ")) { 
-            setCloudStatus(false, "Ошибка: ссылка не прописана!"); 
-            return; 
-        }
-        let savedPoint = localStorage.getItem("Sales_saved_point");
-        if (savedPoint) {
-            currentPoint = savedPoint;
-            selectedPoint.value = savedPoint;
-            enterToCurrentPoint().catch(e => console.log("Фоновый вход ожидает сеть...")); 
-        }
-        try { 
-            let res = await fetch(CONFIG_CLOUD_URL, { 
-                method: "POST", 
-                headers: { "Content-Type": "text/plain" }, 
-                body: JSON.stringify({ action: "alive", point: currentPoint || "Техносити" }) 
-            }); 
-            if (res.ok) setCloudStatus(true); else setCloudStatus(true, "Облако готово к работе."); 
-        } catch(e) { 
-            setCloudStatus(true, "Автономный режим активен."); 
-        }
-    }
-    checkInitialConnection();
 </script>
 </body>
 </html>
