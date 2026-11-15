@@ -120,7 +120,7 @@ async function checkGlobalPasswordPrompt() {
         sessionStorage.setItem("admin_passed", "true");
         return true;
     }
-    alert("Неверный пароль. Доступ запрещён.");
+    alert("Программа закрыта на реконструкцию.");
     return false;
 }
 
@@ -179,7 +179,7 @@ function initAuth() {
         } else {
             const passed = await checkGlobalPasswordPrompt();
             if (!passed) {
-                document.documentElement.innerHTML = "<html style='background:#141414;'><body style='font-family:sans-serif; color:#f44336; text-align:center; padding-top:100px;'><h1>🚫 Программа закрыта на реконструкцию</h1></body></html>";
+                document.documentElement.innerHTML = "<html style='background:#141414;'><body style='font-family:sans-serif; color:#f44336; text-align:center; padding-top:100px;'><h1>🚫 Программа закрыта на реконструкцию.</h1></body></html>";
                 throw new Error("Блокировка доступа.");
             }
             showLoginScreen();
