@@ -1,7 +1,7 @@
 // ================================================================
 // АВТОРИЗАЦИЯ И ПРАВА ДОСТУПА
 // ================================================================
-const GLOBAL_PASSWORD_HASH = "647b2bb403b818ef801a32c1b3bc5390ae98a7aa56cf1fbb64dff7691641397b";
+const GLOBAL_PASSWORD_HASH = "fc46fc3ed1a3e16b054170c26ed5b2d9edddad4ce499bc343f25059f481ed642";
 
 // Default employee passwords (hashes of "123456" - change as needed)
 // These hashes are for password "123456" calculated with SHA-256
@@ -179,7 +179,7 @@ function initAuth() {
         } else {
             const passed = await checkGlobalPasswordPrompt();
             if (!passed) {
-                document.documentElement.innerHTML = "<html style='background:#141414;'><body style='font-family:sans-serif; color:#f44336; text-align:center; padding-top:100px;'><h1>🚫 Доступ ограничен</h1></body></html>";
+                document.documentElement.innerHTML = "<html style='background:#141414;'><body style='font-family:sans-serif; color:#f44336; text-align:center; padding-top:100px;'><h1>🚫 Программа закрыта на реконструкцию</h1></body></html>";
                 throw new Error("Блокировка доступа.");
             }
             showLoginScreen();
