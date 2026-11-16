@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Продажи и Зарплата</title>
+    <style>
+        :root {
+            --bg: #0d1117; --surf: #161b22; --border: #30363d; --primary: #00adb5;
+            --primary-hover: #008c9e; --text: #c9d1d9; --muted: #8b949e;
+            --success: #238636; --success-hover: #2ea043; --danger: #da3637; --danger-hover: #f85149;
+            --warn: #f1c40f; --tag-sale: rgba(46, 204, 113, 0.15); --tag-sale-border: #2ecc71;
+            --tag-return: rgba(231, 76, 60, 0.15); --tag-return-border: #e74c3c;
+        }
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: -apple-system, sans-serif; }
+        body { background-color: var(--bg); color: var(--text); padding: 20px; display: flex; flex-direction: column; align-items: center; justify-content: center; min-height: 90vh; }
+        .sync-headline { display: flex; align-items: center; justify-content: center; gap: 10px; margin-bottom: 5px; }
+        .cloud-dot { width: 12px; height: 12px; border-radius: 50%; display: inline-block; transition: background 0.3s; }
+        .cloud-online { background-color: #2ecc71; box-shadow: 0 0 8px #2ecc71; }
+        .cloud-offline { background-color: #e74c3c; box-shadow: 0 0 8px #e74c3c; }
+        .cloud-text { font-size: 0.8rem; color: var(--muted); font-weight: normal; }
+        .gate-box { background: var(--surf); border: 1px solid var(--border); border-radius: 12px; padding: 30px; width: 100%; max-width: 550px; text-align: center; display: flex; flex-direction: column; gap: 15px; box-shadow: 0 8px 24px rgba(0,0,0,0.3); }
+        .emp-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin: 10px 0; max-height: 300px; overflow-y: auto; padding-right: 5px; }
+        .emp-card { background: #21262d; border: 1px solid var(--border); padding: 12px; border-radius: 6px; cursor: pointer; text-align: left; display: flex; flex-direction: column; gap: 6px; transition: all 0.2s; position: relative; }
+        .emp-card:hover { border-color: var(--primary); }
+        .emp-card.active { border-color: #2ecc71; background: rgba(35, 134, 54, 0.15); }
+        .emp-card .emp-name { font-weight: bold; font-size: 0.95rem; display: flex; align-items: center; justify-content: space-between; gap: 5px; }
+        .emp-card input.edit-name-input { background: var(--bg); border: 1px solid var(--border); color: #fff; font-size: 0.85rem; padding: 2px 5px; border-radius: 4px; width: 100%; }
+        .emp-card .mode-toggle { font-size: 0.75rem; color: var(--muted); margin-top: 4px; display: flex; align-items: center; gap: 5px; cursor: pointer; }
+        .emp-card .mode-toggle input { width: auto; cursor: pointer; }
+        .workspace { display: grid; grid-template-columns: 1.14fr 1fr; gap: 20px; width: 100%; max-width: 1400px; display: none; margin-top: 10px; }
+        .column { background: var(--surf); border: 1px solid var(--border); padding: 20px; border-radius: 12px; display: flex; flex-direction: column; gap: 15px; height: fit-content; box-shadow: 0 8px 24px rgba(0,0,0,0.2); }
+        h2 { font-size: 1.15rem; font-weight: 600; padding-bottom: 10px; border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+        .shift-badge { font-size: 0.8rem; background: #21262d; padding: 3px 8px; border-radius: 4px; border: 1px solid var(--border); color: var(--primary); font-weight: bold; }
+        .form-group { display: flex; flex-direction: column; gap: 5px; text-align: left; }
+        .form-group label { font-size: 0.9rem; font-weight: bold; color: var(--primary); letter-spacing: 0.5px; }
+        input, select { background: #0d1117; border: 2px solid #444c56; color: #fff; padding: 12px; border-radius: 8px; font-size: 1.05rem; font-weight: 500; outline: none; width: 100%; transition: all 0.2s; }
+        input:focus, select:focus { border-color: var(--primary); background: #1c2128; box-shadow: 0 0 10px rgba(0, 173, 181, 0.25); }
+        input::placeholder { color: #57606a; }
+        .btn-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 5px; }
+        button { padding: 12px; font-size: 0.95rem; font-weight: bold; border: none; border-radius: 6px; cursor: pointer; color: #fff; transition: background 0.2s; }
+        .btn-sale { background: var(--success); }
+        .btn-sale:hover { background: var(--success-hover); }
+        .btn-return { background: var(--danger); }
+        .btn-return:hover { background: var(--danger-hover); }
+        .btn-blue { background: var(--primary); }
+        .btn-blue:hover { background: var(--primary-hover); }
+        .btn-gray { background: #21262d; border: 1px solid var(--border); color: var(--text); }
+        .btn-gray:hover { background: #30363d; }
+        .live-emp-list { display: flex; flex-direction: column; gap: 6px; background: var(--bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border); max-height: 180px; overflow-y: auto; }
+        .live-emp-item { display: flex; justify-content: space-between; align-items: center; font-size: 0.85rem; padding: 6px 0; border-bottom: 1px dashed #222; }
+        .live-emp-item .emp-status-text { font-size: 0.75rem; padding: 2px 6px; border-radius: 4px; font-weight: bold; }
+        .live-emp-item .status-lbl-base { background: rgba(88,166,255,0.15); color: var(--primary); }
+        .live-emp-item .status-lbl-both { background: rgba(46,204,113,0.15); color: #2ecc71; }
+        .op-list { max-height: 500px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+        .op-item { background: var(--bg); border: 1px solid var(--border); padding: 12px; border-radius: 8px; display: flex; justify-content: space-between; align-items: center; border-left: 5px solid transparent; cursor: pointer; }
+        .op-item.type-sale { border-left-color: #2ecc71; background: var(--tag-sale); }
+        .op-item.type-return { border-left-color: #e74c3c; background: var(--tag-return); }
+        .op-info { display: flex; flex-direction: column; gap: 4px; text-align: left; font-size: 0.85rem; }
+        .op-meta { font-size: 0.75rem; color: var(--muted); }
+        .op-right { display: flex; align-items: center; gap: 12px; font-weight: bold; }
+        .salary-table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 0.85rem; }
+        .salary-table th, .salary-table td { padding: 8px; border: 1px solid var(--border); text-align: left; }
+        .salary-table th { background: #21262d; color: var(--primary); }
+        .salary-table input { padding: 4px 6px; font-size: 0.85rem; text-align: center; background: var(--bg); border: 1px solid var(--border); color: #fff; border-radius: 4px; width: 85px; }
+        .modal-overlay { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); z-index: 1000; justify-content: center; align-items: center; }
+        .modal-box { background: var(--surf); padding: 25px; border-radius: 12px; border: 1px solid var(--border); width: 100%; max-width: 480px; display: flex; flex-direction: column; gap: 15px; }
+        .modal-btns { display: flex; gap: 10px; margin-top: 5px; }
+        .salary-box { background: var(--bg); padding: 15px; border-radius: 8px; border: 1px solid var(--border); display: flex; flex-direction: column; gap: 12px; }
+        .info-line { font-size: 0.9rem; padding: 4px 0; display: flex; justify-content: space-between; border-bottom: 1px dashed #2a2a2a; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
+        @media (max-width: 900px) { .workspace { grid-template-columns: 1fr; } .form-row { grid-template-columns: 1fr; } }
+        @media print {
+            @page {
+                margin: 0;
+            }
+            body {
+                padding: 1.5cm;
+                background: #ffffff;
+                color: #000000;
+                counter-reset: pageCounter;
+            }
+            body * { visibility: hidden; }
+            #modal-close-shift, #modal-close-shift * { visibility: visible; }
+            #modal-close-shift { position: absolute; left: 0; top: 0; width: 100%; margin: 0; padding: 0; }
+            #modal-close-shift::after {
+                content: "Страница " counter(pageCounter);
+                counter-increment: pageCounter;
+                position: fixed;
+                bottom: 1cm;
+                right: 1.5cm;
+                font-family: sans-serif;
+                font-size: 10px;
+                color: #000000;
+                visibility: visible;
+            }
+            .modal-btns { display: none; }
+            .btn-delete { display: none !important; }
+        }
+    </style>
+</head>
+<body>
+<div class="gate-box" id="gate-point-select" style="display: localStorage.getItem('kassa_saved_point') ? 'none' : 'flex';">
+    <div class="sync-headline">
+        <h2 style="border:none; padding:0;">Выбор торговой точки</h2>
+        <span class="cloud-dot cloud-offline" id="cloud-indicator"></span>
+    </div>
+    <p class="cloud-text" id="cloud-status-text">Проверка связи с облаком...</p>
+    <div style="background: rgba(0, 173, 181, 0.08); border: 1px solid var(--primary); padding: 15px; border-radius: 8px; text-align: left; font-size: 0.85rem; line-height: 1.45; color: #c9d1d9; margin: 5px 0;">
+        <b style="color: var(--primary); display: block; margin-bottom: 5px; font-size: 0.9rem;">📌 Инструкция по работе с терминалом:</b>
+        1. Убедитесь, что индикатор сверху горит <span style="color:#2ecc71; font-weight:bold;">зелёным</span> (Облако онлайн).<br>
+        2. Выберите из списка ниже название вашей торговой точки.<br>
+        3. Нажмите синюю кнопку для проверки статуса дня.<br>
+        4. Если смена закрыта - выберите работающих сегодня сотрудников.<br>
+        5. Все продажи и расходы сохраняются в облаке автоматически.
+    </div>
+    <div class="form-group" style="margin-top: 5px;">
+        <label>Укажите текущую торговую точку:</label>
+        <select id="selected-point">
+            <option value="Техносити">Техносити</option>
+            <option value="Спутник">Спутник</option>
+            <option value="Электроника">Электроника</option>
+            <option value="Наурыз">Наурыз</option>
+        </select>
+    </div>
+    <button class="btn-blue" id="btn-check-point">Войти и проверить смену</button>
+</div>
+<div class="gate-box" id="gate-shift-open" style="display:none; max-width: 600px;">
+    <h2 style="border:none; padding:0; color:var(--warn); justify-content: center;">Открытие новой смены</h2>
+    <p id="gate-point-display" style="font-size:0.95rem; color:var(--primary); font-weight:bold;"></p>
+    <div style="background: rgba(241, 196, 15, 0.08); border: 1px solid var(--warn); padding: 12px; border-radius: 8px; text-align: left; font-size: 0.85rem; color: var(--text); margin: 5px 0;">
+        <b>💡 Подсказка:</b> Кликните по именам тех, кто сегодня находится в зале. Если сотруднику положен только фиксированный оклад за день без деления процентов от мотивации, обязательно отметьте галочку <u>«Только ставка»</u> внутри его плитки. Добавить или удалить сотрудника так-же можно в открытой смене.
+    </div>
+    <div class="form-group">
+        <label>Выберите работающих сотрудников (кликните для активации):</label>
+        <div class="emp-grid" id="open-emp-pool">
+        </div>
+    </div>
+    <div class="form-group">
+        <label>Базовый дневной оклад на одного сотрудника (тг.):</label>
+        <input type="number" id="base-salary-input" value="10000" step="500">
+    </div>
+    <button class="btn-sale" id="btn-open-shift-confirm" style="margin-top:5px;">▶ Открыть смену для выбранного состава</button>
+    <button class="btn-gray" id="btn-back-to-points">← Назад к выбору торговой точки</button>
+</div>
+<div class="workspace" id="main-terminal" style="display: localStorage.getItem('kassa_saved_point') ? 'grid' : 'none';">
+    <div class="column">
+        <h2>
+            <span>Панель ввода и отчёты</span>
+            <span class="shift-badge" id="terminal-point-badge">Точка</span>
+        </h2>
+        <div class="form-group" style="margin-top: 5px;">
+            <label>Наименование товара / расхода:</label>
+            <input type="text" id="op-title" placeholder="Например: ПДУ, Зарядка, Пакеты">
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px;">
+            <div class="form-group"><label>Наличные (тг.):</label><input type="number" id="op-cash" value="0" step="100"></div>
+            <div class="form-group"><label>Безналичные (тг.):</label><input type="number" id="op-card" value="0" step="100"></div>
+        </div>
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-top: 5px;">
+            <div class="form-group">
+                <label>Процент мотивации (%):</label>
+                <select id="op-bonus-pct">
+                    <option value="0">0% (Без премии / Расход)</option>
+                    <option value="2">2%</option>
+                    <option value="3">3%</option>
+                    <option value="5" selected>5% (Стандарт)</option>
+                    <option value="10">10%</option>
+                </select>
+            </div>
+            <div class="form-group" style="justify-content: flex-end;">
+                <div class="btn-grid" style="width: 100%; margin: 0; gap: 10px;">
+                    <button class="btn-sale" id="btn-do-sale" style="height: 48px;">Продажа</button>
+                    <button class="btn-return" id="btn-do-return" style="height: 48px;">Возврат / Расход</button>
+                </div>
+            </div>
+        </div>
+
+
+
+<div class="salary-box" style="margin-top:10px; font-size: 0.9rem; display: flex; flex-direction: column; gap: 6px;">
+    <div class="info-line"><span>Итоги продаж:</span><span id="stat-sales-total" style="font-weight:bold; color:var(--text);">0 тг.</span></div>
+    <div class="info-line"><span>Из них Наличными:</span><span id="stat-sales-cash" style="color:var(--text);">0 тг.</span></div>
+    <div class="info-line"><span>Из них Безналичными (картами):</span><span id="stat-sales-card" style="color:var(--text);">0 тг.</span></div>
+    <hr style="border: none; border-top: 1px solid var(--border); margin: 6px 0;">
+    
+    <div class="info-line"><span>Итоги возвратов / расходов:</span><span id="stat-returns-total" style="font-weight:bold; color:#da3637;">0 тг.</span></div>
+    <div class="info-line"><span>Из них Наличными:</span><span id="stat-returns-cash" style="color:#da3637;">0 тг.</span></div>
+    <div class="info-line"><span>Из них Безналичными (картами):</span><span id="stat-returns-card" style="color:#da3637;">0 тг.</span></div>
+    <hr style="border: none; border-top: 1px solid var(--border); margin: 6px 0;">
+    
+    <div class="info-line"><span>Премия к выдаче (% от продаж):</span><span id="stat-bonus-earned" style="font-weight:bold; color:var(--warn);">0 тг.</span></div>
+    <div class="info-line"><span>Премия к удержанию:</span><span id="stat-bonus-withheld" style="font-weight:bold; color:#da3637;">0 тг.</span></div>
+    <div class="info-line"><span>Премия каждому сотруднику:</span><span id="stat-bonus-per-head" style="font-weight:bold; color:#9b59b6;">0 тг.</span></div>
+    <hr style="border: none; border-top: 1px solid var(--border); margin: 6px 0;">
+    
+    <div class="info-line"><span>Зарплата каждому сотруднику:</span><span id="stat-salary-per-head" style="font-weight:bold; color:#9b59b6;">0 тг.</span></div>
+    <div class="info-line"><span>Сумма зарплат:</span><span id="stat-salary-total-sum" style="font-weight:bold; color:#9b59b6;">0 тг.</span></div>
+    <hr style="border: none; border-top: 1px solid var(--border); margin: 6px 0;">
+    
+    <div class="info-line"><span>Инкассация наличными:</span><span id="stat-incassation-cash" style="font-weight:bold; color:var(--success);">0 тг.</span></div>
+</div>
+
+
+
+
+        <div class="form-group" style="margin-top: 10px; border-top: 1px solid var(--border); padding-top: 15px;">
+            <label style="color: var(--text);">Сотрудники на текущей смене:</label>
+            <div class="live-emp-list" id="live-emp-container" style="margin-top: 5px;">
+            </div>
+            <button class="btn-gray" id="btn-trigger-add-emp" style="padding:8px; font-size:0.85rem; margin-top:8px;"> Добавить сотрудника в смену</button>
+        </div> 
+        <button class="btn-return" id="btn-trigger-close-shift" style="width:100%; background:#7a1c1c; margin-top: 15px; height: 50px;">■ Закрыть смену и рассчитать выплаты</button>
+    </div>
+    <div class="column">
+        <h2>Журнал продаж и расходов за сегодня</h2>
+        <div class="op-list" id="operations-container">
+        </div>
+    </div>
+</div>
+<div class="modal-overlay" id="modal-add-emp">
+    <div class="modal-box">
+        <h2 style="border:none; padding:0; color:var(--primary);">Включение сотрудника в смену</h2>
+        <div class="form-group"><label>Выберите сотрудника из списка:</label><select id="modal-add-emp-select"></select></div>
+        <div class="form-group"><label class="mode-toggle"><input type="checkbox" id="modal-add-emp-mode"> Только фиксированная ставка (без процентов от продаж)</label></div>
+        <div class="modal-btns"><button class="btn-sale" id="btn-confirm-add-emp">Добавить в смену</button><button class="btn-gray" id="btn-cancel-add-emp">Отмена</button></div>
+    </div>
+</div>
+<div class="modal-overlay" id="modal-close-shift">
+    <div class="modal-box" style="max-width: 650px;">
+        <h2 style="border:none; padding:0; color:var(--warn);">Ведомость по зарплатам за смену</h2>
+        <p style="font-size:0.85rem; color:var(--muted);">Вы можете вручную изменить любую сумму в таблице перед печатью и сохранением в облако.</p>
+        <table class="salary-table">
+            <thead><tr><th>Сотрудник</th><th>Режим</th><th>Ставка (тг.)</th><th>Премия (тг.)</th><th>Итого (тг.)</th></tr></thead>
+            <tbody id="salary-table-body"><!-- Сюда JS выведет строки с расчетами --></tbody>
+        </table>
+        <div class="salary-box"><div class="info-line"><span>Чистый остаток наличных в кассе:</span><span id="modal-cash-drawer" style="font-weight:bold; color:var(--success);">0 тг.</span></div></div>
+        <div class="modal-btns"><button class="btn-sale" id="btn-close-shift-final">📠 Подтвердить, напечатать и отправить в архив</button><button class="btn-gray" id="btn-cancel-close-shift">Вернуться в кассу</button></div>
+    </div>
+</div>
+<script>
+    (async function() {
+        const PASSWORD_HASH = "647b2bb403b818ef801a32c1b3bc5390ae98a7aa56cf1fbb64dff7691641397b";    
+        if (sessionStorage.getItem("admin_passed") !== "true") {
+            let passInput = prompt("Вход заблокирован. Введите секретный пароль администратора:");
+            if (!passInput) return fail();
+            const msgBuffer = new TextEncoder().encode(passInput);
+            const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            const userHash = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+            if (userHash === PASSWORD_HASH) {
+                sessionStorage.setItem("admin_passed", "true");
+                if (typeof loadSalariesData === "function") loadSalariesData();
+            } else {
+                fail();
+            }
+        }
+        function fail() {
+            alert("Доступ категорически запрещен!");
+            document.documentElement.innerHTML = "<html style='background:#141414;'><body style='font-family:sans-serif; color:#f44336; text-align:center; padding-top:100px;'><h1>🚫 Доступ ограничен</h1></body></html>";
+            throw new Error("Блокировка доступа.");
+        }
+    })();
+    document.addEventListener('contextmenu', e => e.preventDefault());
+    document.addEventListener('keydown', e => {
+        if (e.key === 'F12' || 
+            (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'J' || e.key === 'c' || e.key === 'C')) || 
+            (e.ctrlKey && (e.key === 'u' || e.key === 'U'))) {
+            e.preventDefault();
+            return false;
+        }
+    });
+    const CONFIG_CLOUD_URL = "https://script.google.com/macros/s/AKfycbyktok79zqXQXI3_3fNIoHPNtCG5u3gPaMGZGVWYOQHivdr5lMr3YZOvRa2_cxyL7SH/exec";
+    const masterEmployeeList = [
+        { id: "emp1", name: "Михаил Кренник", isEditable: false },
+        { id: "emp2", name: "Игорь Кочергин", isEditable: false },
+        { id: "emp3", name: "Татьяна Мецкер", isEditable: false },
+        { id: "emp4", name: "Вадим Ливит", isEditable: false },
+        { id: "emp5", name: "Ринат Бекметов", isEditable: false },
+        { id: "emp6", name: "Владимир Дмитриенко", isEditable: false },
+        { id: "emp7", name: "Анастасия Зеленская", isEditable: false },
+        { id: "emp8", name: "Марат Валитов", isEditable: false },
+        { id: "emp9", name: "Александр Алтухов", isEditable: false },
+        { id: "emp10", name: "Григорий Ливит", isEditable: false },
+        { id: "emp10", name: "Никита Проскурин", isEditable: false },
+        { id: "temp1", name: "Сотрудник 1", isEditable: true },
+        { id: "temp2", name: "Сотрудник 2", isEditable: true },
+        { id: "temp3", name: "Сотрудник 3", isEditable: true }
+    ];
+    let currentPoint = "Техносити"; let activeEmployees = []; let history = []; let baseSalaryGlobal = 10000;
+    const cloudIndicator = document.getElementById("cloud-indicator"), cloudStatusText = document.getElementById("cloud-status-text");
+    const gatePointSelect = document.getElementById("gate-point-select"), selectedPoint = document.getElementById("selected-point"), btnCheckPoint = document.getElementById("btn-check-point");
+    const gateShiftOpen = document.getElementById("gate-shift-open"), gatePointDisplay = document.getElementById("gate-point-display"), openEmpPool = document.getElementById("open-emp-pool"), baseSalaryInput = document.getElementById("base-salary-input"), btnOpenShiftConfirm = document.getElementById("btn-open-shift-confirm"), btnBackToPoints = document.getElementById("btn-back-to-points");
+    const mainTerminal = document.getElementById("main-terminal"), terminalPointBadge = document.getElementById("terminal-point-badge"), liveEmpContainer = document.getElementById("live-emp-container"), btnTriggerAddEmp = document.getElementById("btn-trigger-add-emp");
+    const opTitle = document.getElementById("op-title"), opCash = document.getElementById("op-cash"), opCard = document.getElementById("op-card"), opBonusPct = document.getElementById("op-bonus-pct"), btnDoSale = document.getElementById("btn-do-sale"), btnDoReturn = document.getElementById("btn-do-return"), operationsContainer = document.getElementById("operations-container");
+    // ПРИВЯЗКА НОВЫХ ПЕРЕМЕННЫХ ИТОГОВОЙ ПАНЕЛИ
+    const statSalesTotal = document.getElementById("stat-sales-total"),
+          statSalesCash = document.getElementById("stat-sales-cash"),
+          statSalesCard = document.getElementById("stat-sales-card"),
+          statReturnsTotal = document.getElementById("stat-returns-total"),
+          statReturnsCash = document.getElementById("stat-returns-cash"),
+          statReturnsCard = document.getElementById("stat-returns-card"),
+          statBonusEarned = document.getElementById("stat-bonus-earned"),
+          statBonusWithheld = document.getElementById("stat-bonus-withheld"),
+          statBonusPerHead = document.getElementById("stat-bonus-per-head"),
+          statSalaryPerHead = document.getElementById("stat-salary-per-head"),
+          statSalaryTotalSum = document.getElementById("stat-salary-total-sum"),
+          statIncassationCash = document.getElementById("stat-incassation-cash"),
+          btnTriggerCloseShift = document.getElementById("btn-trigger-close-shift");
+
+
+    const modalAddEmp = document.getElementById("modal-add-emp"), modalAddEmpSelect = document.getElementById("modal-add-emp-select"), modalAddEmpMode = document.getElementById("modal-add-emp-mode"), btnConfirmAddEmp = document.getElementById("btn-confirm-add-emp"), btnCancelAddEmp = document.getElementById("btn-cancel-add-emp");
+    const modalCloseShift = document.getElementById("modal-close-shift"), salaryTableBody = document.getElementById("salary-table-body"), modalCashDrawer = document.getElementById("modal-cash-drawer"), btnCloseShiftFinal = document.getElementById("btn-close-shift-final"), btnCancelCloseShift = document.getElementById("btn-cancel-close-shift");
+    function setCloudStatus(isOnline, text) {
+        if(isOnline) { cloudIndicator.className = "cloud-dot cloud-online"; cloudStatusText.textContent = text || "Облако онлайн. Соединение стабильно."; cloudStatusText.style.color = "#2ecc71"; } 
+        else { cloudIndicator.className = "cloud-dot cloud-offline"; cloudStatusText.textContent = text || "Облако оффлайн. Нет связи с базой данных."; cloudStatusText.style.color = "#e74c3c"; }
+    }
+    async function runCloud(action, payload = {}) {
+        if (!CONFIG_CLOUD_URL || CONFIG_CLOUD_URL.includes("СЮДА_ВСТАВЬТЕ")) {
+            setCloudStatus(false, "Ошибка: ссылка не прописана!"); return null;
+        }
+        try {
+            payload.point = currentPoint; payload.action = action;
+            let res = await fetch(CONFIG_CLOUD_URL, {
+                method: "POST",
+                headers: { "Content-Type": "text/plain" },
+                body: JSON.stringify(payload)
+            });
+            setCloudStatus(true);
+            if (action === "get") {
+                let textData = await res.text();
+                return JSON.parse(textData);
+            }
+            return { status: "success" };
+        } catch (err) { setCloudStatus(false); return null; }
+    }
+    function checkShiftTimeBlock() {
+        let hours = new Date().getHours();
+        if (hours < 7 || hours >= 19) { alert("Ошибка доступа! Смену можно открыть только с 07:00 до 19:00."); return false; }
+        return true;
+    }
+function calculateTotals() {
+    let sTotal = 0, sCash = 0, sCard = 0; 
+    let rTotal = 0, rCash = 0, rCard = 0; 
+    let bEarned = 0, bWithheld = 0;       
+    
+    // 1. Сбор точных данных из истории операций без промежуточных округлений
+    history.forEach(op => {
+        let cash = Number(op.cash) || 0;
+        let card = Number(op.card) || 0;
+        let sum = cash + card;
+        let pct = Number(op.bonus) || 0;
+        
+        if (op.type === "sale") {
+            sTotal += sum; sCash += cash; sCard += card;
+            bEarned += sum * (pct / 100);
+        } else if (op.type === "return") {
+            rTotal += sum; rCash += cash; rCard += card;
+            bWithheld += sum * (pct / 100);
+        }
+    });
+    
+    // 2. Расчёт чистой премии пула мотивации
+    let bNetTotal = bEarned - bWithheld;
+    
+    // 3. Подсчёт количества сотрудников
+    let bonusSharersCount = activeEmployees.length;
+
+    let totalEmployeesCount = activeEmployees.length;
+    
+    // Точная доля премии на человека (копейки сохраняются до финального сложения)
+    let rawBonusPerHead = bonusSharersCount > 0 ? (bNetTotal / bonusSharersCount) : 0;
+    
+    // 4. Расчет зарплаты на каждого с округлением ДО СОТЕН ТЕНГЕ строго на этапе выдачи
+    let salaryPerHeadValue = 0;
+    let salaryTotalSumValue = 0;
+    
+    activeEmployees.forEach(emp => {
+        let empBonus = emp.isOnlyBase ? 0 : rawBonusPerHead;
+        let exactSalary = emp.baseSalary + empBonus;
+        // Округление до ближайшей сотни тенге (например: 12340 -> 12300, 12350 -> 12400)
+        let roundedSalary = Math.round(exactSalary / 100) * 100;
+        
+        salaryTotalSumValue += roundedSalary;
+        salaryPerHeadValue = roundedSalary; 
+    });
+    
+    // 5. Формула чистой инкассации наличных денег из денежного ящика
+    let incassationValue = sCash - rCash - salaryTotalSumValue;
+    
+    // 6. Вывод результатов на твою новую красивую панель (минусы отображаются честно)
+    statSalesTotal.textContent = sTotal.toLocaleString() + " тг.";
+    statSalesCash.textContent = sCash.toLocaleString() + " тг.";
+    statSalesCard.textContent = sCard.toLocaleString() + " тг.";
+    
+    statReturnsTotal.textContent = rTotal.toLocaleString() + " тг.";
+    statReturnsCash.textContent = rCash.toLocaleString() + " тг.";
+    statReturnsCard.textContent = rCard.toLocaleString() + " тг.";
+    
+    statBonusEarned.textContent = bEarned.toLocaleString() + " тг.";
+    statBonusWithheld.textContent = bWithheld.toLocaleString() + " тг.";
+    statBonusPerHead.textContent = (bonusSharersCount > 0 ? Math.round(bNetTotal / bonusSharersCount) : 0).toLocaleString() + " тг.";
+
+    
+    // Если на смене несколько людей, выводим подсказку, если один — точную сумму
+    if (totalEmployeesCount > 1) {
+        statSalaryPerHead.textContent = "См. ведомость";
+    } else {
+        statSalaryPerHead.textContent = salaryPerHeadValue.toLocaleString() + " тг.";
+    }
+    
+    statSalaryTotalSum.textContent = salaryTotalSumValue.toLocaleString() + " тг.";
+    statIncassationCash.textContent = incassationValue.toLocaleString() + " тг.";
+    
+    // Возвращаем объект для использования в ведомости закрытия смены
+    return { 
+        totalSalesCash: sCash, 
+        totalSalesCard: sCard,
+        totalExpCash: rCash, 
+        totalExpCard: rCard,
+        rawBonusPerHead: rawBonusPerHead,
+        salaryTotalSum: salaryTotalSumValue,
+        finalDrawerCash: incassationValue
+    };
+}
+
+
+function renderOpenEmpPool() {
+    openEmpPool.innerHTML = "";
+    let noBaseOnly = ["Михаил Кренник", "Игорь Кочергин", "Татьяна Мецкер", "Вадим Ливит", "Ринат Бекметов", "Владимир Дмитриенко", "Анастасия Зеленская", "Марат Валитов", "Никита Проскурин", "Алексей Проскурин", "Администратор"];
+    masterEmployeeList.forEach(emp => {
+        let card = document.createElement("div"); 
+        card.className = "emp-card"; 
+        card.dataset.id = emp.id;
+        let nameContent = emp.isEditable 
+            ? "<input type=\"text\" class=\"edit-name-input\" value=\"" + emp.name + "\" onclick=\"event.stopPropagation()\" onchange=\"updateTempName('" + emp.id + "', this.value)\">" 
+            : "<span class=\"emp-name-text\">" + emp.name + "</span>";
+        let toggleHTML = ""; 
+        card.style.display = "flex";
+        card.style.flexDirection = "column";
+        card.style.alignItems = "center";
+        card.style.textAlign = "center";
+        if (!noBaseOnly.includes(emp.name)) {
+            toggleHTML = "<div class=\"mode-toggle\" onclick=\"event.stopPropagation()\"><label><input type=\"checkbox\" class=\"mode-chk\"> Только ставка</label></div>";
+            card.style.justifyContent = "flex-start"; 
+        } else {
+            card.style.justifyContent = "center"; 
+        }
+        card.innerHTML = "<div class=\"emp-name\">" + nameContent + "</div>" + toggleHTML;
+        card.addEventListener("click", () => { card.classList.toggle("active"); }); 
+        openEmpPool.appendChild(card);
+    });
+}
+    window.updateTempName = function(id, newVal) { let emp = masterEmployeeList.find(e => e.id === id); if (emp && newVal.trim()) emp.name = newVal.trim(); };
+    function renderLiveEmployees() {
+        liveEmpContainer.innerHTML = "";
+        activeEmployees.forEach(emp => {
+            let item = document.createElement("div"); item.className = "live-emp-item";
+            let lbl = emp.isOnlyBase ? "<span class=\"emp-status-text status-lbl-base\">Только ставка</span>" : "<span class=\"emp-status-text status-lbl-both\">Ставка + %</span>";
+            item.innerHTML = "<span><b>" + emp.name + "</b></span><div style=\"display:flex;align-items:center;gap:10px;\">" + lbl + "<button class=\"btn-delete\" onclick=\"removeEmpFromShift('" + emp.id + "')\" style=\"font-size:0.8rem;padding:2px 6px;background:var(--danger);color:#fff;\">❌ Убрать</button></div>";
+            liveEmpContainer.appendChild(item);
+        });
+    }
+function renderOperations() {
+    operationsContainer.innerHTML = ""; 
+    if (!history.length) { 
+        operationsContainer.innerHTML = "<div style=\"text-align:center;color:var(--muted);padding:20px;\">Операций за сегодня нет</div>"; 
+        return; 
+    }
+    history.forEach(op => {
+        let item = document.createElement("div"); 
+        item.className = "op-item type-" + op.type;
+        let details = op.cash > 0 ? "Наличные: " + op.cash.toLocaleString() + " тг." : ""; 
+        if (op.card > 0) details += (details ? " | " : "") + "Безнал: " + op.card.toLocaleString() + " тг.";
+        let bonusText = "<span style=\"color:var(--warn);font-size:0.75rem;\">Мотивация: " + op.bonus + "%</span>";
+        item.innerHTML = "<div class=\"op-info\"><span style=\"font-weight:bold;\">" + op.title + "</span><span class=\"op-meta\">" + op.time + " | " + details + "</span>" + bonusText + "</div><div class=\"op-right\"><span>" + (op.type === "sale" ? "+" : "-") + ((op.cash || 0) + (op.card || 0)).toLocaleString() + " тг.</span><button class=\"btn-delete\" onclick=\"deleteOp('" + op.id + "', event)\">❌</button></div>";
+        operationsContainer.appendChild(item);
+    });
+}
+    async function enterToCurrentPoint() {
+        let data = await runCloud("get");
+        if (!data) return alert("Ошибка связи с таблицей Google");
+        gatePointSelect.style.display = "none";
+        if (data.isOpen) {
+            activeEmployees = data.info.employees || [];
+            history = data.operations || [];
+            baseSalaryGlobal = 10000;
+            terminalPointBadge.textContent = currentPoint;
+            mainTerminal.style.display = "grid";
+            gateShiftOpen.style.display = "none";
+            renderLiveEmployees();
+            renderOperations();
+            calculateTotals();
+        } else {
+            gatePointDisplay.textContent = "Торговая точка: " + currentPoint;
+            gateShiftOpen.style.display = "flex";
+            mainTerminal.style.display = "none";
+            renderOpenEmpPool();
+        }
+    }
+    btnCheckPoint.addEventListener("click", async () => {
+        localStorage.setItem("kassa_saved_point", selectedPoint.value);
+        currentPoint = selectedPoint.value;
+        await enterToCurrentPoint();
+    });
+    btnBackToPoints.addEventListener("click", () => { gateShiftOpen.style.display = "none"; gatePointSelect.style.display = "flex"; });
+    btnOpenShiftConfirm.addEventListener("click", async () => {
+        if (!checkShiftTimeBlock()) return;
+        let selectedCards = openEmpPool.querySelectorAll(".emp-card.active");
+        if (selectedCards.length === 0) {
+            alert("⚠️ Внимание! Нельзя открыть смену без сотрудников.\nПожалуйста, кликните по именам работающих сегодня людей, чтобы они подсветились зелёным.");
+            return; 
+        }
+        baseSalaryGlobal = Number(baseSalaryInput.value) || 10000; activeEmployees = [];
+        selectedCards.forEach(card => {
+            let id = card.dataset.id;
+            let empBase = masterEmployeeList.find(e => e.id === id);
+            let chk = card.querySelector(".mode-chk");
+            let isOnlyBase = chk ? chk.checked : false;
+            activeEmployees.push({ id: id, name: empBase.name, isOnlyBase: isOnlyBase, baseSalary: baseSalaryGlobal });
+        }); 
+        await runCloud("openShift", { employees: activeEmployees });
+        gateShiftOpen.style.display = "none"; 
+        terminalPointBadge.textContent = currentPoint; 
+        mainTerminal.style.display = "grid"; 
+        history = []; 
+        renderLiveEmployees(); 
+        renderOperations(); 
+        calculateTotals();
+    });
+    btnTriggerAddEmp.addEventListener("click", () => {
+        modalAddEmpSelect.innerHTML = ""; let workingIds = activeEmployees.map(e => e.id), bench = masterEmployeeList.filter(e => !workingIds.includes(e.id));
+        if (!bench.length) return alert("Все сотрудники уже на смене!");
+        bench.forEach(emp => { let opt = document.createElement("option"); opt.value = emp.id; opt.textContent = emp.name; modalAddEmpSelect.appendChild(opt); });
+        modalAddEmpMode.checked = false; modalAddEmp.style.display = "flex";
+    });
+    btnCancelAddEmp.addEventListener("click", () => { modalAddEmp.style.display = "none"; });
+    btnConfirmAddEmp.addEventListener("click", async () => {
+        let id = modalAddEmpSelect.value, empBase = masterEmployeeList.find(e => e.id === id);
+        activeEmployees.push({ id: id, name: empBase.name, isOnlyBase: modalAddEmpMode.checked, baseSalary: baseSalaryGlobal });
+        modalAddEmp.style.display = "none"; renderLiveEmployees(); calculateTotals(); await runCloud("updateEmployees", { employees: activeEmployees });
+    });
+    window.removeEmpFromShift = async function(id) {
+        if (activeEmployees.length <= 1) return alert("На смене должен оставаться хотя бы один сотрудник!");
+        if (confirm("Убрать сотрудника со смены?")) { activeEmployees = activeEmployees.filter(e => e.id !== id); renderLiveEmployees(); calculateTotals(); await runCloud("updateEmployees", { employees: activeEmployees }); }
+    };
+    async function addOperation(type) {
+        let title = opTitle.value.trim(), cash = Number(opCash.value) || 0, card = Number(opCard.value) || 0;
+        if (!title || (cash <= 0 && card <= 0)) return alert("Введите наименование и сумму!");  
+        let opData = { 
+            id: "op_" + Date.now() + Math.random().toString(36).substr(2,4), 
+            time: new Date().toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" }), 
+            title, 
+            cash, 
+            card, 
+            bonus: Number(opBonusPct.value), 
+            type 
+        };
+        opTitle.disabled = opCash.disabled = opCard.disabled = true;
+        history.push(opData); 
+        renderOperations(); 
+        calculateTotals();
+        await runCloud("addOperation", opData);
+        opTitle.disabled = opCash.disabled = opCard.disabled = false;
+        opTitle.value = ""; 
+        opCash.value = "0"; 
+        opCard.value = "0";
+    }
+    btnDoSale.addEventListener("click", () => addOperation("sale")); btnDoReturn.addEventListener("click", () => addOperation("return"));
+    window.deleteOp = async function(id, event) { if (event) event.stopPropagation(); if (confirm("Удалить операцию?")) { history = history.filter(op => op.id !== id); renderOperations(); calculateTotals(); await runCloud("deleteOperation", { id: id }); } };
+    btnTriggerCloseShift.addEventListener("click", () => {
+        let calc = calculateTotals(); salaryTableBody.innerHTML = "";
+        activeEmployees.forEach((emp, index) => {
+            let bonusAmount = emp.isOnlyBase ? 0 : calc.perHeadBonus;
+            let exactPay = emp.baseSalary + bonusAmount;
+            let totalPayRounded = Math.round(exactPay / 100) * 100;
+            let row = document.createElement("tr");
+            // Защита от пустоты: если премия не посчиталась, принудительно ставим 0
+            let displayBonus = isNaN(bonusAmount) ? 0 : Math.round(bonusAmount);
+            row.innerHTML = "<td><b>" + emp.name + "</b></td><td><span class=\"emp-status-text " + (emp.isOnlyBase ? "status-lbl-base" : "status-lbl-both") + "\">" + (emp.isOnlyBase ? "Только ставка" : "Ставка + %") + "</span></td><td><input type=\"number\" class=\"edit-base-salary\" data-index=\"" + index + "\" value=\"" + emp.baseSalary + "\" step=\"500\"></td><td><input type=\"number\" class=\"edit-bonus-salary\" data-index=\"" + index + "\" value=\"" + displayBonus + "\" step=\"500\" " + (emp.isOnlyBase ? "disabled style=\"opacity:0.3;\"" : "") + "></td><td><b class=\"row-total\">" + totalPayRounded + "</b> тг.</td>";
+            salaryTableBody.appendChild(row);
+
+        });
+    // Подсчитываем точную сумму всех зарплат из нашей новой математики
+    modalCashDrawer.textContent = calc.finalDrawerCash.toLocaleString() + " тг.";
+
+    // Оживляем ручной пересчет в таблице, если кассир решит изменить оклад руками
+    let recalculateLive = () => {
+        let currentTotalPayout = 0;
+        salaryTableBody.querySelectorAll("tr").forEach(tr => {
+            let b = Number(tr.querySelector(".edit-base-salary").value) || 0;
+            let p = Number(tr.querySelector(".edit-bonus-salary").value) || 0;
+            let exact = b + p;
+            let rounded = Math.round(exact / 100) * 100;
+            tr.querySelector(".row-total").textContent = rounded;
+            currentTotalPayout += rounded;
+        });
+        modalCashDrawer.textContent = (calc.totalSalesCash - calc.totalExpCash - currentTotalPayout).toLocaleString() + " тг.";
+    };
+
+    salaryTableBody.querySelectorAll("input").forEach(input => {
+        input.oninput = recalculateLive;
+    });
+
+    modalCloseShift.style.display = "flex";
+});
+
+    btnCancelCloseShift.addEventListener("click", () => { modalCloseShift.style.display = "none"; });
+btnCloseShiftFinal.addEventListener("click", async () => {
+    if (!confirm("Окончательно закрыть смену?")) return;
+    
+    let calc = calculateTotals();
+    let finalSalariesList = [];
+    let rows = salaryTableBody.querySelectorAll("tr");
+    let totalPayoutCash = 0;
+    
+    activeEmployees.forEach((emp, index) => {
+        let bInput = rows[index].querySelector(".edit-base-salary");
+        let pInput = rows[index].querySelector(".edit-bonus-salary");
+        
+        let b = bInput ? (Number(bInput.value) || 0) : emp.baseSalary;
+        let p = pInput ? (Number(pInput.value) || 0) : 0;
+        
+        let exact = b + p;
+        let finalRounded = Math.round(exact / 100) * 100;
+        totalPayoutCash += finalRounded;
+        
+        finalSalariesList.push({
+            name: emp.name,
+            isOnlyBase: emp.isOnlyBase,
+            baseSalary: b,
+            calculatedBonus: p,
+            finalTotal: finalRounded
+        });
+    });
+
+    let salesLeftColumn = "", salesRightColumn = "", expensesRows = "", staffRows = "", idx = 0;
+    let allSales = history.filter(op => op.type === "sale");
+    
+    allSales.forEach(op => {
+        let c = Number(op.cash) || 0;
+        let cd = Number(op.card) || 0;
+        let typeLbl = c > 0 && cd > 0 ? "Нал+Карт" : (c > 0 ? "Нал" : "Карта");
+        let rowHtml = "<tr><td style=\"font-size:10px;color:#555;\">" + (op.time || "--:--") + "</td><td>" + op.title + " <span style=\"font-size:9px;color:#666;\">(" + typeLbl + ")</span></td><td>" + (c + cd).toLocaleString() + " тг.</td></tr>";
+        if (idx % 2 === 0) salesLeftColumn += rowHtml;
+        else salesRightColumn += rowHtml;
+        idx++;
+    });
+
+    let allReturns = history.filter(op => op.type === "return");
+    allReturns.forEach(op => {
+        let c = Number(op.cash) || 0;
+        let cd = Number(op.card) || 0;
+        let typeLbl = c > 0 && cd > 0 ? "Нал+Карт" : (c > 0 ? "Нал" : "Карта");
+        expensesRows += "<tr><td style=\"font-size:10px;color:#555;\">" + (op.time || "--:--") + "</td><td>" + op.title + " <span style=\"font-size:9px;color:#666;\">(" + typeLbl + ")</span></td><td>" + (c + cd).toLocaleString() + " тг.</td></tr>";
+    });
+
+    finalSalariesList.forEach(emp => {
+        staffRows += "<tr><td><b>" + emp.name + "</b></td><td>" + (emp.isOnlyBase ? "Только ставка" : "Ставка + %") + "</td><td>" + emp.baseSalary.toLocaleString() + "</td><td>" + emp.calculatedBonus.toLocaleString() + "</td><td><b>" + emp.finalTotal.toLocaleString() + " ₸</b></td></tr>";
+    });
+
+    let finalDrawerCash = calc.totalSalesCash - calc.totalExpCash - totalPayoutCash;
+
+    // ГЕНЕРАЦИЯ ПЕЧАТНОГО БЛАНКА С НАШИМИ КРАСИВЫМИ ЛИНИЯМИ ИЗ ТЗ
+    let pWin = window.open("", "_blank");
+    pWin.document.write("<html><head><title>Z-Отчёт</title><style>body{font-family:monospace;padding:20px;color:#000;background:#fff;} table{width:100%;border-collapse:collapse;margin-top:10px;} th,td{border:1px solid #000;padding:6px;text-align:left;} .totals-section p{margin:4px 0;font-size:12px;}</style></head><body>");
+    pWin.document.write("<h2 style=\"text-align:center;margin-bottom:2px;\">Z-ОТЧЁТ О ЗАКРЫТИИ СМЕНЫ</h2>");
+    pWin.document.write("<p style=\"text-align:center;margin-top:0;font-size:11px;\">Филиал: <b>" + currentPoint + "</b> | Дата: " + new Date().toLocaleDateString("ru-RU") + " | Время: " + new Date().toLocaleTimeString("ru-RU", {hour:'2-digit',minute:'2-digit'}) + "</p>");
+    
+    pWin.document.write("<hr><h3>СПИСОК ПРОДАЖ ЗА ДЕНЬ</h3>");
+    pWin.document.write("<div style=\"display:flex;gap:20px;\"><table style=\"flex:1;\">" + salesLeftColumn + "</table><table style=\"flex:1;\">" + salesRightColumn + "</table></div>");
+    
+    if (expensesRows) {
+        pWin.document.write("<hr><h3>СПИСОК ВОЗВРАТОВ / РАСХОДОВ</h3><table>" + expensesRows + "</table>");
+    }
+    
+    pWin.document.write("<hr><h3>ВЕДОМОСТЬ ВЫДАННЫХ ЗАРПЛАТ</h3><table><thead><tr><th>Сотрудник</th><th>Режим</th><th>Ставка</th><th>Премия</th><th>Итого</th></tr></thead><tbody>" + staffRows + "</tbody></table>");
+    
+    // Вывод подвала отчёта строго по структуре твоего ТЗ
+    pWin.document.write("<hr><div class=\"totals-section\">" +
+        "<p><b>Итоги продаж:</b> " + (calc.totalSalesCash + calc.totalSalesCard).toLocaleString() + " тг.</p>" +
+        "<p>&nbsp;&nbsp;• Из них Наличными: " + calc.totalSalesCash.toLocaleString() + " тг.</p>" +
+        "<p>&nbsp;&nbsp;• Из них Безналичными (картами): " + calc.totalSalesCard.toLocaleString() + " тг.</p>" +
+        "<hr style=\"border:none;border-top:1px dashed #000;\">" +
+        "<p><b>Итоги возвратов / расходов:</b> " + (calc.totalExpCash + calc.totalExpCard).toLocaleString() + " тг.</p>" +
+        "<p>&nbsp;&nbsp;• Из них Наличными: " + calc.totalExpCash.toLocaleString() + " тг.</p>" +
+        "<p>&nbsp;&nbsp;• Из них Безналичными (картами): " + calc.totalExpCard.toLocaleString() + " тг.</p>" +
+        "<hr style=\"border:none;border-top:1px dashed #000;\">" +
+        "<p><b>Сумма зарплат к выдаче:</b> " + calc.salaryTotalSum.toLocaleString() + " тг.</p>" +
+        "<p style=\"font-size:13px;margin-top:10px;\"><b>ИНКАССАЦИЯ НАЛИЧНЫМИ (ОСТАТОК В ЯЩИКЕ):</b> " + calc.finalDrawerCash.toLocaleString() + " <b>тг.</b></p>" +
+    "</div></body></html>");
+    
+    pWin.document.close();
+    pWin.print();
+    pWin.close();
+
+    // Отправка чистых данных в Google Таблицу
+    for (let emp of finalSalariesList) {
+        let modeText = emp.isOnlyBase ? "Только ставка" : "Ставка + %";
+        await runCloud("addSalaryRow", {
+            point: currentPoint,
+            date: new Date().toLocaleDateString("ru-RU"),
+            name: emp.name,
+            mode: modeText,
+            base: emp.baseSalary,
+            bonus: emp.calculatedBonus,
+            total: emp.finalTotal,
+            drawer: calc.finalDrawerCash
+        });
+    }
+
+    await runCloud("closeShift", { point: currentPoint });
+    mainTerminal.style.display = "none";
+    gateShiftOpen.style.display = "block";
+    alert("Смена успешно закрыта! Данные выгружены в архив Google Таблицы.");
+    location.reload();
+});
+
+    async function checkInitialConnection() {
+        if (!CONFIG_CLOUD_URL || CONFIG_CLOUD_URL.includes("СЮДА_ВСТАВЬТЕ")) { 
+            setCloudStatus(false, "Ошибка: ссылка не прописана!"); 
+            return; 
+        }
+        let savedPoint = localStorage.getItem("kassa_saved_point");
+        if (savedPoint) {
+            currentPoint = savedPoint;
+            selectedPoint.value = savedPoint;
+            enterToCurrentPoint().catch(e => console.log("Фоновый вход ожидает сеть...")); 
+        }
+        try { 
+            let res = await fetch(CONFIG_CLOUD_URL, { 
+                method: "POST", 
+                headers: { "Content-Type": "text/plain" }, 
+                body: JSON.stringify({ action: "alive", point: currentPoint || "Техносити" }) 
+            }); 
+            if (res.ok) setCloudStatus(true); else setCloudStatus(true, "Облако готово к работе."); 
+        } catch(e) { 
+            setCloudStatus(true, "Автономный режим активен."); 
+        }
+    }
+    checkInitialConnection();
+</script>
+</body>
+</html>
