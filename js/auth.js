@@ -1,11 +1,11 @@
 // ================================================================
 // АВТОРИЗАЦИЯ И ПРАВА ДОСТУПА
 // ================================================================
-const GLOBAL_PASSWORD_HASH = "fc46fc3ed1a3e16b054170c26ed5b2d9edddad4ce499bc343f25059f481ed642";
 
-// Default employee passwords (hashes of "123456" - change as needed)
-// These hashes are for password "123456" calculated with SHA-256
-const DEFAULT_PASSWORD_HASH = "5f4dcc3b5aa765d61d8327deb882cf99";
+const GLOBAL_PASSWORD_HASH = "647b2bb403b818ef801a32c1b3bc5390ae98a7aa56cf1fbb64dff7691641397b";
+
+
+const DEFAULT_PASSWORD_HASH = "647b2bb403b818ef801a32c1b3bc5390ae98a7aa56cf1fbb64dff7691641397b";
 
 const users = [
     { id: "emp00", name: "Администратор", passwordHash: DEFAULT_PASSWORD_HASH, isEditable: false },
@@ -29,11 +29,14 @@ const users = [
 let currentUser = null;
 let shiftOwnerId = null;
 
-async function sha256(str) {
-    const msgBuffer = new TextEncoder().encode(str);
-    const hashBuffer = await crypto.subtle.digest('SHA-256', msgBuffer);
-    const hashArray = Array.from(new Uint8Array(hashBuffer));
-    return hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+function sha256(str) {
+    return new Promise((resolve) => {
+        const msgBuffer = new TextEncoder().encode(str);
+        crypto.subtle.digest('SHA-256', msgBuffer).then((hashBuffer) => {
+            const hashArray = Array.from(new Uint8Array(hashBuffer));
+            resolve(hashArray.map(b => b.toString(16).padStart(2, '0')).join(''));
+        });
+    });
 }
 
 function getLockState(userId) {
@@ -113,15 +116,73 @@ function logout() {
 }
 
 async function checkGlobalPasswordPrompt() {
-    let passInput = prompt("Введите код доступа:");
-    if (!passInput) return false;
-    const hash = await sha256(passInput);
+    // Сначала проверяем, не введен ли уже пароль администратора
+    if (sessionStorage.getItem("admin_passed") === "true") {
+        return true; // Пароль уже введен, пропускаем проверку
+    }
+    
+    // Проверяем блокировку через localStorage
+    const lockUntil = Number(localStorage.getItem(`lockUntil_admin`) || 0);
+    const now = Date.now();
+    
+    if (lockUntil > now) {
+        const minutes = Math.ceil((lockUntil - now) / 60000);
+        alert(`Ввод заблокирован на ${minutes} мин. Попробуйте позже.`);
+        return false;
+    }
+    
+    // Сбрасываем старую блокировку если была
+    localStorage.removeItem(`lockUntil_admin`);
+    localStorage.removeItem(`failCount_admin`);
+    
+    // Показываем HTML форму входа вместо prompt
+    // Форма уже есть в index.html (id="gate-login"), изначально скрыта style="display:none"
+    const gateLogin = document.getElementById("gate-login");
+    const btnLogin = document.getElementById("btn-login");
+    const loginPassInput = document.getElementById("login-pass-input");
+    const loginError = document.getElementById("login-error");
+    const loginAttemptInfo = document.getElementById("login-attempt-info");
+    
+    if (gateLogin) {
+        gateLogin.style.display = "flex";
+        // Скрываем экран общего пароля
+        const gatePassword = document.getElementById("gate-password");
+        if (gatePassword) gatePassword.style.display = "none";
+        // Очищаем поле и ошибки
+        if (loginPassInput) loginPassInput.value = "";
+        if (loginError) loginError.style.display = "none";
+        if (loginAttemptInfo) loginAttemptInfo.textContent = "";
+        return true; // Показали форму, даем пользователю ввести пароль
+    }
+    
+    // Fallback - если элемента нет (редкий случай)
+    return true;
+}
+
+// Функция showLoginScreen заканчивается здесь
+
+async function checkGlobalPasswordPrompt() {
+    const globalPassInput = document.getElementById("global-pass-input");
+    const globalPassError = document.getElementById("global-pass-error");
+    if (!globalPassInput || !globalPassError) return false;
+
+    const pass = globalPassInput.value;
+    if (!pass) {
+        globalPassError.style.display = "block";
+        return false;
+    }
+
+    const hash = await sha256(pass);
     if (hash === GLOBAL_PASSWORD_HASH) {
         sessionStorage.setItem("admin_passed", "true");
+        globalPassError.style.display = "none";
+        globalPassInput.value = "";
         return true;
+    } else {
+        globalPassError.style.display = "block";
+        globalPassInput.value = "";
+        return false;
     }
-    alert("Программа закрыта на реконструкцию.");
-    return false;
 }
 
 async function attemptUserLogin() {
@@ -173,23 +234,45 @@ async function attemptUserLogin() {
 
 function initAuth() {
     const gatePasswordCheck = async () => {
-        const savedUser = sessionStorage.getItem("current_user");
-        if (savedUser && sessionStorage.getItem("admin_passed") === "true") {
-            currentUser = JSON.parse(savedUser);
-        } else {
-            const passed = await checkGlobalPasswordPrompt();
-            if (!passed) {
-                document.documentElement.innerHTML = "<html style='background:#141414;'><body style='font-family:sans-serif; color:#f44336; text-align:center; padding-top:100px;'><h1>🚫 Программа закрыта на реконструкцию.</h1></body></html>";
-                throw new Error("Блокировка доступа.");
-            }
-            showLoginScreen();
+        // Показываем экран ввода общего пароля
+        const gatePassword = document.getElementById("gate-password");
+        const gateLogin = document.getElementById("gate-login");
+        if (gatePassword) gatePassword.style.display = "flex";
+        if (gateLogin) gateLogin.style.display = "none";
+
+        const passed = await checkGlobalPasswordPrompt();
+        if (!passed) {
+            document.documentElement.innerHTML = "<html style='background:#141414;'><body style='font-family:sans-serif; color:#f44336; text-align:center; padding-top:100px;'><h1>🚫 Доступ ограничен</h1></body></html>";
+            throw new Error("Блокировка доступа.");
         }
-        if (currentUser) {
-            const user = users.find(u => u.id === currentUser.id);
-            if (user) onUserLoggedIn(user);
-        }
+        showLoginScreen();
     };
     gatePasswordCheck();
+}
+
+function onUserLoggedIn(user) {
+    currentUser = user;
+    // Сохраняем текущего пользователя в sessionStorage
+    sessionStorage.setItem("current_user", JSON.stringify(currentUser));
+    
+    // Скрываем экран входа и показываем главный терминал
+    const gatePointSelect = document.getElementById("gate-point-select");
+    const gateShiftOpen = document.getElementById("gate-shift-open");
+    const mainTerminal = document.getElementById("main-terminal");
+    const loginScreens = document.querySelectorAll(".gate-overlay");
+
+    if (gatePointSelect) gatePointSelect.style.display = "none";
+    if (gateShiftOpen) gateShiftOpen.style.display = "none";
+    if (mainTerminal) {
+        mainTerminal.style.display = "grid";
+        // Обновляем текст выбранной точки
+        const terminalPointBadge = document.getElementById("terminal-point-badge");
+        if (terminalPointBadge) terminalPointBadge.textContent = currentUser.name;
+    }
+    loginScreens.forEach(screen => screen.style.display = "none");
+    
+    // Инициализируем приложение
+    checkInitialConnection();
 }
 
 function setupAuthListeners() {

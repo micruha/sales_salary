@@ -10,7 +10,7 @@ function renderOpenEmpPool() {
         card.className = "emp-card";
         card.dataset.id = emp.id;
         let isCurrentUser = currentUser && emp.id === currentUser.id;
-        let nameContent = emp.isEditable
+        let nameContent = emp.isOnlyBase
             ? "<input type=\"text\" class=\"edit-name-input\" value=\"" + emp.name + "\" onclick=\"event.stopPropagation()\" onchange=\"updateTempName('" + emp.id + "', this.value)\">"
             : "<span class=\"emp-name-text\">" + emp.name + (isCurrentUser ? " <span style=\"color:#2ecc71;font-size:0.75rem;\">(Вы)</span>" : "") + "</span>";
         let toggleHTML = "";
@@ -18,7 +18,7 @@ function renderOpenEmpPool() {
         card.style.flexDirection = "column";
         card.style.alignItems = "center";
         card.style.textAlign = "center";
-        if (emp.isEditable) {
+        if (emp.isOnlyBase) {
             toggleHTML = "<div class=\"mode-toggle\" onclick=\"event.stopPropagation()\"><label><input type=\"checkbox\" class=\"mode-chk\"> Только ставка</label></div>";
             card.style.justifyContent = "flex-start";
         } else {

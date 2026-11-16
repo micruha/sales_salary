@@ -24,7 +24,8 @@ if (btnTriggerCloseShift) {
         salaryTableBody.innerHTML = "";
         activeEmployees.forEach((emp, index) => {
             let bonusAmount = emp.isOnlyBase ? 0 : calc.perHeadBonus;
-            let exactPay = emp.baseSalary + bonusAmount;
+            let basePart = emp.isOnlyBase ? emp.baseSalary : (calc.minPayout || 10000);
+            let exactPay = basePart + bonusAmount;
             let totalPayRounded = Math.round(exactPay / 100) * 100;
             let row = document.createElement("tr");
             row.innerHTML = "<td><b>" + emp.name + "</b></td><td><span class=\"emp-status-text " + (emp.isOnlyBase ? "status-lbl-base" : "status-lbl-both") + "\">" + (emp.isOnlyBase ? "Только ставка" : "Ставка + %") + "</span></td><td><input type=\"number\" class=\"edit-base-salary\" data-index=\"" + index + "\" value=\"" + emp.baseSalary + "\" step=\"500\"></td><td><input type=\"number\" class=\"edit-bonus-salary\" data-index=\"" + index + "\" value=\"" + bonusAmount + "\" step=\"500\" " + (emp.isOnlyBase ? "disabled style=\"opacity:0.3;\"" : "") + "></td><td><b class=\"row-total\">" + totalPayRounded + "</b> тг.</td>";
